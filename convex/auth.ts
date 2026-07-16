@@ -61,6 +61,11 @@ const staticOrigins = [
   "http://localhost:3000",
   "http://localhost:3003",
   "http://localhost:8081", // Expo Metro dev server
+  // Production web deploy (Vercel). Without this, the browser's CORS
+  // preflight to this Convex deployment is rejected and every auth call
+  // (sign in, sign up, the demo "Try with Test Account" button) fails with
+  // a generic "Failed to fetch" — the request never reaches the server.
+  "https://valve-app-web.vercel.app",
 ];
 
 const ac = createAccessControl({
@@ -99,6 +104,7 @@ async function getTrustedOrigins(request?: Request): Promise<string[]> {
     ...staticOrigins,
     "https://*.modal.host",
     "https://*.shipper.now",
+    "https://*.vercel.app",
     "http://*.localhost:3003",
     "https://*.localhost:3003",
   ];
@@ -113,6 +119,7 @@ async function getTrustedOrigins(request?: Request): Promise<string[]> {
       const allowed =
         host.endsWith(".modal.host") ||
         host.endsWith(".shipper.now") ||
+        host.endsWith(".vercel.app") ||
         host === "localhost" ||
         host === "127.0.0.1" ||
         (host.endsWith(".localhost") && parsed.port === "3003");
