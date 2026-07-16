@@ -1,0 +1,134 @@
+// BH Sensors REST API client.
+// The live server exposes over HTTPS:
+//   GET /tms/xdata/MyService/Sum?A=2&B=2
+//   GET /tms/xdata/MyService/GetRawDataCount
+//   GET /tms/xdata/MyService/GetModuleListing          — all modules
+//   GET /tms/xdata/MyService/GetModule?module_id=<id>  — single module
+//   GET /tms/xdata/MyService/GetModuleMeasments?module_id=<id>&from_date_str=<YYYY/MM/DD>&to_date_str=<YYYY/MM/DD>&max_count=<n>
+//     — measurement history for a module in a date range (note server
+//       spelling "Measments" — do not "fix" it, it must match the server).
+// Auth is a bearer token sent on every request.
+
+export const API_BASE = 'https://asvupdateserver.ddns.net:2001/tms/xdata/MyService';
+
+const BEARER_TOKEN = 'secret_token';
+
+function authHeaders(): Record<string, string> {
+  return {
+    Accept: 'application/json',
+    ...(BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}),
+  };
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
+  if (!res.ok) {
+    throw new Error(`API ${res.status}: ${res.statusText}`);
+  }
+  return (await res.json()) as T;
+}
+
+/** Connectivity check — server-side Sum endpoint. */
+export async function checkSum(a: number, b: number): Promise<number> {
+  const data = await getJson<{ value?: number } | number>(`/Sum?A=${a}&B=${b}`);
+  if (typeof data === 'number') return data;
+  return data.value ?? 0;
+}
+
+/** Returns the raw record count from the database — proves DB connectivity. */
+export async function getRawDataCount(): Promise<number> {
+  const data = await getJson<{ value?: number } | number>('/GetRawDataCount');
+  if (typeof data === 'number') return data;
+  return data.value ?? 0;
+}
+
+// ── Module data endpoints ────────────────────────────────────────────────────
+// The server response shape may be a bare object/array, or wrapped in
+// { value: ... } (TMS XData convention). Normalize both defensively.
+
+export type ModuleRecord = Record<string, unknown>;
+
+function unwrap(data: unknown): unknown {
+  if (data && typeof data === 'object' && 'value' in (data as any)) {
+    return (data as any).value;
+  }
+  return data;
+}
+
+function toRecordArray(data: unknown): ModuleRecord[] {
+  const v = unwrap(data);
+  if (Array.isArray(v)) return v as ModuleRecord[];
+  if (v && typeof v === 'object') return [v as ModuleRecord];
+  return [];
+}
+
+/** Full listing of all provisioned modules. */
+export async function getModuleListing(): Promise<ModuleRecord[]> {
+  const data = await getJson<unknown>('/GetModuleListing');
+  return toRecordArray(data);
+}
+
+/** Data for a specific module by its module_id (numeric MAC value). */
+export async function getModule(moduleId: string): Promise<ModuleRecord[]> {
+  const data = await getJson<unknown>(`/GetModule?module_id=${encodeURIComponent(moduleId)}`);
+  return toRecordArray(data);
+}
+
+/** Format a Date as YYYY/MM/DD — the format the server expects. */
+export function toDateParam(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+}
+
+/**
+ * Measurement history for a specific module within a date range.
+ * NOTE: endpoint name is "GetModuleMeasments" (server's spelling).
+ * Dates are strings in YYYY/MM/DD format. max_count caps record volume.
+ */
+export async function getModuleMeasurements(
+  moduleId: string,
+  fromDateStr: string,
+  toDateStr: string,
+  maxCount = 500,
+): Promise<ModuleRecord[]> {
+  const qs =
+    `module_id=${encodeURIComponent(moduleId)}` +
+    `&from_date_str=${encodeURIComponent(fromDateStr)}` +
+    `&to_date_str=${encodeURIComponent(toDateStr)}` +
+    `&max_count=${maxCount}`;
+  const data = await getJson<unknown>(`/GetModuleMeasments?${qs}`);
+  return toRecordArray(data);
+}
+
+/**
+ * Modules associated with an email address. Multiple records may be returned.
+ * Server endpoint: GetModuleFromEmail?email_str=<email>
+ */
+export async function getModuleFromEmail(email: string): Promise<ModuleRecord[]> {
+  const data = await getJson<unknown>(
+    `/GetModuleFromEmail?email_str=${encodeURIComponent(email)}`,
+  );
+  return toRecordArray(data);
+}
+
+/**
+ * Modules associated with a mobile/cell phone number. Multiple records may be
+ * returned. Server endpoint: GetModuleFromMobileNumber?mobile_str=<number>
+ */
+export async function getModuleFromMobileNumber(mobile: string): Promise<ModuleRecord[]> {
+  const data = await getJson<unknown>(
+    `/GetModuleFromMobileNumber?mobile_str=${encodeURIComponent(mobile)}`,
+  );
+  return toRecordArray(data);
+}
+
+export type ApiStatus = 'idle' | 'checking' | 'online' | 'offline';
+
+export interface ConnectivityResult {
+  status: ApiStatus;
+  rawDataCount: number | null;
+  error: string | null;
+  checkedAt: number | null;
+}
