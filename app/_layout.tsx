@@ -8,6 +8,7 @@ import { ToastHost } from '../src/components/ToastHost';
 import '../global.css';
 import { PreviewStatusBar } from "@/components/PreviewStatusBar";
 import { SafeAreaProvider } from "@/components/PreviewSafeAreaProvider"; // Shipper preview shim — real insets on web, pass-through on device
+import { WebAppFrame } from "../src/components/WebAppFrame";
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
@@ -24,24 +25,26 @@ export default function RootLayout() {
       >
         <StatusBar style="light" />
         <ToastHost />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="auth" options={{ presentation: 'card' }} />
-          <Stack.Screen
-            name="sensor/[id]"
-            options={{
-              presentation: 'card',
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="scenes/create"
-            options={{
-              presentation: 'modal',
-              animation: 'slide_from_bottom',
-            }}
-          />
-        </Stack>
+        <WebAppFrame>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="auth" options={{ presentation: 'card' }} />
+            <Stack.Screen
+              name="sensor/[id]"
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="scenes/create"
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+          </Stack>
+        </WebAppFrame>
         <PreviewStatusBar />
     </SafeAreaProvider>
     </ConvexBetterAuthProvider>
