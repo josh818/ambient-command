@@ -13,6 +13,8 @@ import { QuickControls } from '../../src/components/QuickControls';
 import { SceneShortcuts } from '../../src/components/SceneShortcuts';
 import { useSubscription } from '../../src/lib/subscription';
 import { PremiumBadge } from '../../src/components/PremiumGate';
+import { HealthRing } from '../../src/components/HealthRing';
+import { computeSystemHealth } from '../../src/lib/health';
 
 function StatTile({
   icon,
@@ -48,6 +50,21 @@ export default function DashboardScreen() {
   const { liveSensors: sensors, pulse } = useLiveData(stored);
   const { alerts, counts } = useSmartAlerts(sensors);
   const { isPremium, limits } = useSubscription();
+  const health = computeSystemHealth(sensors, alerts);
+
+  const handleHealthPress = () => {
+    if (health.problemCount > 0) {
+      // Jump straight to the problem sensors, pre-filtered by the dominant
+      // issue (warnings first, then offline units).
+      const hasWarning = sensors.some((s) => s.status === 'warning');
+      const target = hasWarning ? 'warning' : 'offline';
+      router.push({ pathname: '/(tabs)/sensors', params: { filter: target } });
+    } else if (counts.total > 0) {
+      router.push('/(tabs)/alerts');
+    } else {
+      router.push('/(tabs)/sensors');
+    }
+  };
 
   const visibleSensors = isPremium ? sensors : sensors.slice(0, limits.maxSensors);
   const hiddenCount = sensors.length - visibleSensors.length;
@@ -84,6 +101,11 @@ export default function DashboardScreen() {
             />
             <Text style={{ color: colors.online, fontSize: 12, fontWeight: '700' }}>Live</Text>
           </View>
+        </View>
+
+        {/* System health hero */}
+        <View className="mt-4">
+          <HealthRing health={health} onPress={handleHealthPress} />
         </View>
 
         <View className="mt-4">

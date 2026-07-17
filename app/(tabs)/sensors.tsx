@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import {
   View,
   Text,
@@ -105,7 +106,18 @@ function LookupResultCard({ rec }: { rec: ModuleRecord }) {
 export default function SensorsScreen() {
   const { sensors: stored } = useSensors();
   const { liveSensors: sensors } = useLiveData(stored);
+  const params = useLocalSearchParams<{ filter?: string }>();
   const [filter, setFilter] = useState<Filter>('all');
+
+  // Allow deep-links like /(tabs)/sensors?filter=warning (used by the
+  // dashboard health ring to jump straight to problem sensors).
+  useEffect(() => {
+    const requested = params.filter;
+    if (requested && filters.some((f) => f.key === requested)) {
+      setFilter(requested as Filter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.filter]);
 
   const [lookupMode, setLookupMode] = useState<LookupMode>('email');
   const [query, setQuery] = useState('');

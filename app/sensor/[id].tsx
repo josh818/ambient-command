@@ -22,6 +22,34 @@ import {
 } from '../../src/lib/mockData';
 import { StatusPill } from '../../src/components/StatusPill';
 import { LiveModuleData } from '../../src/components/LiveModuleData';
+import { useDaySeries } from '../../src/lib/sparkHistory';
+
+function StatTile({
+  label,
+  value,
+  tint,
+}: {
+  label: string;
+  value: string;
+  tint?: string;
+}) {
+  return (
+    <View
+      className="flex-1 rounded-xl p-3"
+      style={{ backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}
+    >
+      <Text style={{ color: colors.textFaint, fontSize: 10, fontWeight: '700', letterSpacing: 0.6 }}>
+        {label}
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={{ color: tint ?? colors.text, fontSize: 15, fontWeight: '800', marginTop: 3 }}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
 
 function MetricRow({ label, value }: { label: string; value: string }) {
   return (
@@ -39,6 +67,7 @@ export default function SensorDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { sensor, renameSensor, toggleSensor } = useSensor(id);
+  const daySeries = useDaySeries(id);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
@@ -219,6 +248,31 @@ export default function SensorDetail() {
                   Not wired to the physical valve yet — this switch only saves a setting in the app. It does not
                   open or close the actual valve.
                 </Text>
+              </View>
+            </View>
+          )}
+
+          {/* 24h stat tiles from real server measurements */}
+          {daySeries && (
+            <View
+              className="rounded-2xl p-4 mt-4"
+              style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+            >
+              <View className="flex-row items-center mb-3">
+                <Ionicons name="pulse" size={14} color={colors.primary} />
+                <Text style={{ color: colors.textMuted, fontSize: 12, fontWeight: '600', marginLeft: 6 }}>
+                  {daySeries.metricLabel} · last 24h · {daySeries.points.length} records (live)
+                </Text>
+              </View>
+              <View className="flex-row" style={{ gap: 12 }}>
+                <StatTile
+                  label="CURRENT"
+                  value={`${daySeries.last}${daySeries.metricUnit}`}
+                  tint={colors.primary}
+                />
+                <StatTile label="MIN" value={`${daySeries.min}${daySeries.metricUnit}`} />
+                <StatTile label="MAX" value={`${daySeries.max}${daySeries.metricUnit}`} />
+                <StatTile label="AVG" value={`${daySeries.avg}${daySeries.metricUnit}`} />
               </View>
             </View>
           )}

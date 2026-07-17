@@ -11,6 +11,7 @@
 import type * as actions from "../actions.js";
 import type * as auth from "../auth.js";
 import type * as automations from "../automations.js";
+import type * as demo from "../demo.js";
 import type * as http from "../http.js";
 import type * as mutations from "../mutations.js";
 import type * as queries from "../queries.js";
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   actions: typeof actions;
   auth: typeof auth;
   automations: typeof automations;
+  demo: typeof demo;
   http: typeof http;
   mutations: typeof mutations;
   queries: typeof queries;

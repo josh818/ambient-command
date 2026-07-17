@@ -10,19 +10,44 @@ import {
   type Sensor,
 } from '../lib/mockData';
 import { StatusPill } from './StatusPill';
+import { LiveDot } from './LiveDot';
+import { Sparkline } from './Sparkline';
+import { useSparkline } from '../lib/sparkHistory';
+
+function batteryIcon(volts: number | undefined): {
+  name: string;
+  color: string;
+} {
+  if (volts === undefined) return { name: 'battery-half-outline', color: colors.textFaint };
+  if (volts >= 3.9) return { name: 'battery-full', color: colors.online };
+  if (volts >= 3.6) return { name: 'battery-half', color: colors.warning };
+  return { name: 'battery-dead', color: colors.danger };
+}
+
+function signalIcon(sensor: Sensor): { name: string; color: string } {
+  if (!sensor.hasTelemetry) return { name: 'cellular-outline', color: colors.textFaint };
+  if (sensor.status === 'offline') return { name: 'cloud-offline-outline', color: colors.offline };
+  return { name: 'cellular', color: colors.online };
+}
 
 export function SensorCard({ sensor }: { sensor: Sensor }) {
   const router = useRouter();
   const meta = sensorTypeMeta[sensor.type];
+  const spark = useSparkline(sensor.id);
+
+  const live = sensor.hasTelemetry && sensor.status !== 'offline';
+  const batt = batteryIcon(sensor.batteryVolts);
+  const sig = signalIcon(sensor);
 
   return (
     <Pressable
       onPress={() => router.push(`/sensor/${sensor.id}`)}
-      className="rounded-2xl p-4 mb-3 active:opacity-80"
+      className="rounded-2xl p-4 active:opacity-80"
       style={{
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
+        marginBottom: 12,
       }}
     >
       <View className="flex-row items-center">
@@ -39,16 +64,21 @@ export function SensorCard({ sensor }: { sensor: Sensor }) {
                 : colors.primary
             }
           />
+          {live && (
+            <View style={{ position: 'absolute', top: -2, right: -2 }}>
+              <LiveDot color={isLeaking(sensor) ? colors.danger : colors.online} size={8} />
+            </View>
+          )}
         </View>
 
-        <View className="flex-1">
+        <View className="flex-1" style={{ paddingRight: 8 }}>
           <Text
             numberOfLines={1}
             style={{ color: colors.text, fontSize: 16, fontWeight: '700' }}
           >
             {sensor.defaultName}
           </Text>
-          <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 2 }}>
+          <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 2 }} numberOfLines={1}>
             {sensor.location} · {meta.label}
           </Text>
         </View>
@@ -69,9 +99,19 @@ export function SensorCard({ sensor }: { sensor: Sensor }) {
           >
             {formatSensorValue(sensor)}
           </Text>
-          <Text style={{ color: colors.textFaint, fontSize: 11, marginTop: 2 }}>
-            {sensor.hasTelemetry ? formatRelativeTime(sensor.lastUpdate) : 'N/A'}
-          </Text>
+          {/* 24h sparkline from real server measurements (hidden when none) */}
+          {spark && spark.length >= 2 ? (
+            <View style={{ marginTop: 4 }}>
+              <Sparkline
+                data={spark}
+                color={isLeaking(sensor) ? colors.danger : colors.primary}
+              />
+            </View>
+          ) : (
+            <Text style={{ color: colors.textFaint, fontSize: 11, marginTop: 2 }}>
+              {sensor.hasTelemetry ? formatRelativeTime(sensor.lastUpdate) : 'N/A'}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -81,11 +121,11 @@ export function SensorCard({ sensor }: { sensor: Sensor }) {
       >
         <StatusPill status={sensor.status} />
         <View className="flex-row items-center">
-          <Ionicons name="battery-half" size={14} color={colors.textMuted} />
+          <Ionicons name={batt.name as any} size={15} color={batt.color} />
           <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 4, marginRight: 12 }}>
             {sensor.batteryVolts !== undefined ? `${sensor.batteryVolts.toFixed(2)}V` : 'N/A'}
           </Text>
-          <Ionicons name="flash" size={14} color={colors.textMuted} />
+          <Ionicons name={sig.name as any} size={14} color={sig.color} />
           <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 4 }}>
             {sensor.systemVolts !== undefined ? `${sensor.systemVolts.toFixed(2)}V` : 'N/A'}
           </Text>

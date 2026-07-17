@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
 import { colors } from '../src/constants/theme';
 import {
   AUTH_CONFIG,
@@ -32,6 +34,18 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ensureDemoData = useMutation(api.demo.ensureDemoData);
+
+  // Seed the demo account with scenes + sensor settings so dashboards aren't
+  // empty on first sign-in. Idempotent server-side; retried briefly because
+  // the Convex auth token can lag the Better Auth sign-in by a moment.
+  const seedDemoData = (attempt = 0) => {
+    ensureDemoData({}).catch(() => {
+      if (attempt < 4) {
+        setTimeout(() => seedDemoData(attempt + 1), 1200);
+      }
+    });
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -65,6 +79,8 @@ export default function AuthScreen() {
       setError(result.error?.message ?? 'Could not start the demo session');
       return;
     }
+    // Fire-and-forget: never blocks or fails the demo sign-in itself.
+    seedDemoData();
     router.replace('/(tabs)');
   };
 

@@ -1,46 +1,74 @@
-import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/theme';
 import { useScenes, SCENE_PRESETS, type Scene } from '../lib/sceneStore';
+import { hapticSuccess } from '../lib/haptics';
 
 function SceneTile({ scene, onTrigger }: { scene: Scene; onTrigger: (s: Scene) => Promise<void> }) {
   const [running, setRunning] = useState(false);
+  const [justRan, setJustRan] = useState(false);
   const router = useRouter();
+  const scale = useRef(new Animated.Value(1)).current;
   const accent = scene.color ?? colors.primary;
 
   const handlePress = async () => {
     setRunning(true);
     try {
-      await onTrigger(scene);
+      await onTrigger(scene); // fires the success toast via ToastHost
+      void hapticSuccess(); // native only — no-op on web
+      setJustRan(true);
+      Animated.sequence([
+        Animated.spring(scale, { toValue: 1.06, useNativeDriver: true, speed: 40, bounciness: 8 }),
+        Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }),
+      ]).start();
+      setTimeout(() => setJustRan(false), 1400);
+    } catch {
+      // error toast already shown by the scene store
     } finally {
       setRunning(false);
     }
   };
 
   return (
-    <Pressable
-      onPress={handlePress}
-      onLongPress={() => router.push({ pathname: '/scenes/create', params: { id: scene._id } })}
-      disabled={running}
-      className="rounded-2xl p-4 mr-3 active:opacity-80"
-      style={{ width: 132, backgroundColor: colors.surface, borderWidth: 1, borderColor: accent + '44' }}
-    >
-      <View className="w-10 h-10 rounded-xl items-center justify-center mb-3" style={{ backgroundColor: accent + '22' }}>
-        {running ? (
-          <ActivityIndicator size="small" color={accent} />
-        ) : (
-          <Ionicons name={(scene.icon ?? 'flash') as any} size={20} color={accent} />
-        )}
-      </View>
-      <Text style={{ color: colors.text, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
-        {scene.name}
-      </Text>
-      <Text style={{ color: colors.textFaint, fontSize: 11, marginTop: 2 }}>
-        {scene.actions.length} device{scene.actions.length === 1 ? '' : 's'}
-      </Text>
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale }], marginRight: 12 }}>
+      <Pressable
+        onPress={handlePress}
+        onLongPress={() => router.push({ pathname: '/scenes/create', params: { id: scene._id } })}
+        disabled={running}
+        className="rounded-2xl p-4 active:opacity-80"
+        style={{
+          width: 132,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: justRan ? accent : accent + '44',
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Trigger scene ${scene.name}`}
+      >
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center mb-3"
+          style={{ backgroundColor: justRan ? 'rgba(52,211,153,0.18)' : accent + '22' }}
+        >
+          {running ? (
+            <ActivityIndicator size="small" color={accent} />
+          ) : justRan ? (
+            <Ionicons name="checkmark" size={20} color={colors.online} />
+          ) : (
+            <Ionicons name={(scene.icon ?? 'flash') as any} size={20} color={accent} />
+          )}
+        </View>
+        <Text style={{ color: colors.text, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>
+          {scene.name}
+        </Text>
+        <Text style={{ color: justRan ? colors.online : colors.textFaint, fontSize: 11, marginTop: 2 }}>
+          {justRan
+            ? 'Activated'
+            : `${scene.actions.length} device${scene.actions.length === 1 ? '' : 's'}`}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -74,8 +102,15 @@ export function SceneShortcuts() {
             <Pressable
               key={p.name}
               onPress={() => router.push({ pathname: '/scenes/create', params: { preset: p.name } })}
-              className="rounded-2xl p-4 mr-3 active:opacity-80"
-              style={{ width: 150, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' }}
+              className="rounded-2xl p-4 active:opacity-80"
+              style={{
+                width: 150,
+                marginRight: 12,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderStyle: 'dashed',
+              }}
             >
               <View className="w-10 h-10 rounded-xl items-center justify-center mb-3" style={{ backgroundColor: p.color + '22' }}>
                 <Ionicons name={p.icon as any} size={20} color={p.color} />
