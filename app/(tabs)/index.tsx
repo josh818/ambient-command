@@ -15,6 +15,7 @@ import { useSubscription } from '../../src/lib/subscription';
 import { PremiumBadge } from '../../src/components/PremiumGate';
 import { HealthRing } from '../../src/components/HealthRing';
 import { computeSystemHealth } from '../../src/lib/health';
+import { NoDevicesAssigned } from '../../src/components/NoDevicesAssigned';
 
 function StatTile({
   icon,
@@ -46,11 +47,36 @@ function StatTile({
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { sensors: stored } = useSensors();
+  const { sensors: stored, noDevicesAssigned, access } = useSensors();
   const { liveSensors: sensors, pulse } = useLiveData(stored);
   const { alerts, counts } = useSmartAlerts(sensors);
   const { isPremium, limits } = useSubscription();
   const health = computeSystemHealth(sensors, alerts);
+
+  // Account has no devices assigned — keep the header, show the designed
+  // empty state instead of health/stats/sensor sections.
+  if (noDevicesAssigned) {
+    return (
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+        <ScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-row items-center justify-between mb-1">
+            <View>
+              <Text style={{ color: colors.textFaint, fontSize: 13 }}>BH Sensors</Text>
+              <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>
+                Ambient Command
+              </Text>
+            </View>
+          </View>
+          <View className="mt-4">
+            <NoDevicesAssigned email={access.userEmail} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   const handleHealthPress = () => {
     if (health.problemCount > 0) {

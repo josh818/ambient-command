@@ -34,6 +34,19 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_sensorId", ["sensorId"]),
 
+  // Per-account device scoping. Keyed by EMAIL (not userId) so an admin can
+  // assign modules to an address before that account even exists, and demo
+  // seeding stays simple. userEmail is always stored lowercase.
+  deviceAssignments: defineTable({
+    userEmail: v.string(),
+    moduleId: v.string(),
+    label: v.optional(v.string()),
+    assignedAt: v.number(),
+    assignedBy: v.string(),
+  })
+    .index("by_email", ["userEmail"])
+    .index("by_module", ["moduleId"]),
+
   // Scenes - one-tap shortcuts that set multiple devices to a target state
   scenes: defineTable({
     userId: v.string(),

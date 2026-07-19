@@ -14,6 +14,7 @@ import { colors } from '../../src/constants/theme';
 import { useSensors } from '../../src/lib/sensorStore';
 import { useLiveData } from '../../src/lib/useLiveData';
 import { SensorCard } from '../../src/components/SensorCard';
+import { NoDevicesAssigned } from '../../src/components/NoDevicesAssigned';
 import type { SensorStatus } from '../../src/constants/theme';
 import {
   getModuleFromEmail,
@@ -104,7 +105,7 @@ function LookupResultCard({ rec }: { rec: ModuleRecord }) {
 }
 
 export default function SensorsScreen() {
-  const { sensors: stored } = useSensors();
+  const { sensors: stored, noDevicesAssigned, access } = useSensors();
   const { liveSensors: sensors } = useLiveData(stored);
   const params = useLocalSearchParams<{ filter?: string }>();
   const [filter, setFilter] = useState<Filter>('all');
@@ -145,6 +146,27 @@ export default function SensorsScreen() {
       });
     }
   };
+
+  // Account has no devices assigned — show the designed empty state instead
+  // of the roster (and instead of the server lookup tools).
+  if (noDevicesAssigned) {
+    return (
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+        <View className="px-5 pt-2 pb-1">
+          <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>Sensors</Text>
+          <Text style={{ color: colors.textFaint, fontSize: 13, marginTop: 2 }}>
+            0 devices assigned
+          </Text>
+        </View>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 16 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <NoDevicesAssigned email={access.userEmail} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>

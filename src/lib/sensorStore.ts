@@ -4,11 +4,17 @@ import { useSession } from '../../lib/auth-client';
 import { api } from '../../convex/_generated/api';
 import { mockSensors, type Sensor } from './mockData';
 import { notifySuccess, notifyError } from './notify';
+import { useDeviceAccess } from './deviceAccess';
 
 // Sensor naming + power state is now persisted to Shipper Cloud (Convex)
 // per-user. We merge the user's saved settings on top of the mock catalog
 // so every screen (Dashboard, Sensors list, Detail) stays in sync via the
 // live Convex query.
+//
+// DEVICE SCOPING: this hook is the single choke point where the module
+// roster enters app state, so per-account assignment filtering happens HERE.
+// Every consumer (dashboard, sensors list, alerts, diagnostics, console,
+// quick controls, scenes, sensor detail) automatically respects it.
 
 type SettingDoc = {
   _id: string;
@@ -40,7 +46,18 @@ export function useSensors() {
   const createSetting = useMutation(api.mutations.createSensorSetting);
   const updateSetting = useMutation(api.mutations.updateSensorSetting);
 
-  const sensors = useMemo(() => mergeSensors(settings), [settings]);
+  const access = useDeviceAccess();
+
+  const sensors = useMemo(() => {
+    // Access still resolving → show nothing rather than flashing the full
+    // fleet before the per-account filter is known.
+    if (access.loading) return [];
+    const merged = mergeSensors(settings);
+    // null = unrestricted (admin / signed out) — current behavior.
+    if (access.moduleIds === null) return merged;
+    const allowed = new Set(access.moduleIds);
+    return merged.filter((s) => allowed.has(s.id));
+  }, [settings, access.loading, access.moduleIds]);
 
   const findSetting = useCallback(
     (sensorId: string) => (settings ?? []).find((s) => s.sensorId === sensorId),
@@ -102,11 +119,18 @@ export function useSensors() {
     [findSetting, createSetting, updateSetting],
   );
 
+  // Signed in, access resolved, and zero devices assigned → screens show a
+  // designed "no devices assigned" empty state instead of an empty list.
+  const noDevicesAssigned =
+    !access.loading && access.moduleIds !== null && access.moduleIds.length === 0;
+
   return {
     sensors,
     renameSensor,
     toggleSensor,
-    ready: settings !== undefined || !session,
+    ready: (settings !== undefined || !session) && !access.loading,
+    access,
+    noDevicesAssigned,
   };
 }
 

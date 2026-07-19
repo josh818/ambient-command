@@ -63,6 +63,11 @@ export default function AuthScreen() {
       setError(result.error?.message ?? 'Something went wrong');
       return;
     }
+    // Test accounts (demo / josh-tester @ambientcommand.app) get their demo
+    // data + device assignments seeded on every sign-in. No-op for real users.
+    if (email.trim().toLowerCase().endsWith('@ambientcommand.app')) {
+      seedDemoData();
+    }
     router.replace('/(tabs)');
   };
 

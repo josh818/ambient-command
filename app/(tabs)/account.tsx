@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '../../src/constants/theme';
 import { useSession, signOutUser } from '../../lib/auth-client';
 import { useSubscription } from '../../src/lib/subscription';
+import { useDeviceAccess } from '../../src/lib/deviceAccess';
 
 function Row({
   icon,
@@ -44,6 +45,7 @@ export default function AccountScreen() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const { isPremium } = useSubscription();
+  const { isAdmin } = useDeviceAccess();
 
   const user = session?.user;
   const planLabel = isPremium ? 'Premium plan · unlimited' : 'Free plan · 3 sensors';
@@ -159,6 +161,15 @@ export default function AccountScreen() {
             tint={colors.primary}
             onPress={() => router.push('/settings/history')}
           />
+          {isAdmin && (
+            <Row
+              icon="key-outline"
+              label="Device Access"
+              sub="Assign sensors to user accounts"
+              tint={colors.warning}
+              onPress={() => router.push('/settings/device-access')}
+            />
+          )}
           <Row
             icon="bar-chart-outline"
             label="Usage Analytics"
