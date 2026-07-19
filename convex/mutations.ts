@@ -251,6 +251,14 @@ export const upsertPreferences = mutation({
     propertyLabel: v.optional(v.string()),
     theme: v.optional(v.string()),
     consoleFavorites: v.optional(v.array(v.string())),
+    usageGoal: v.optional(v.number()),
+    notifyLeak: v.optional(v.boolean()),
+    notifyConnectivity: v.optional(v.boolean()),
+    notifyBattery: v.optional(v.boolean()),
+    notifyUsage: v.optional(v.boolean()),
+    quietHoursEnabled: v.optional(v.boolean()),
+    quietHoursStart: v.optional(v.number()),
+    quietHoursEnd: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx) as BetterAuthUser | null;

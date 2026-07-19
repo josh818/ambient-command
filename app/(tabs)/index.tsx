@@ -49,9 +49,11 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { sensors: stored, noDevicesAssigned, access } = useSensors();
   const { liveSensors: sensors, pulse } = useLiveData(stored);
-  const { alerts, counts } = useSmartAlerts(sensors);
+  const { alerts, counts, allAlerts } = useSmartAlerts(sensors);
   const { isPremium, limits } = useSubscription();
-  const health = computeSystemHealth(sensors, alerts);
+  // Health always reflects every evaluated alert — notification muting only
+  // hides alerts from the alert center, it never changes system health.
+  const health = computeSystemHealth(sensors, allAlerts);
 
   // Account has no devices assigned — keep the header, show the designed
   // empty state instead of health/stats/sensor sections.
@@ -142,6 +144,42 @@ export default function DashboardScreen() {
           <StatTile icon="checkmark-circle" label="Online" value={`${stats.online}`} tint={colors.online} />
           <StatTile icon="alert-circle" label="Warnings" value={`${stats.warning}`} tint={colors.warning} />
           <StatTile icon="close-circle" label="Offline" value={`${stats.offline}`} tint={colors.offline} />
+        </View>
+
+        {/* Analytics & timeline shortcuts */}
+        <View className="flex-row mt-4" style={{ gap: 14 }}>
+          <Pressable
+            onPress={() => router.push('/usage')}
+            className="flex-1 rounded-2xl p-4 active:opacity-90"
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          >
+            <View
+              className="w-9 h-9 rounded-xl items-center justify-center mb-2.5"
+              style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+            >
+              <Ionicons name="bar-chart" size={18} color={colors.primary} />
+            </View>
+            <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>Water Usage</Text>
+            <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 2 }}>
+              Trends & conservation goal
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/events')}
+            className="flex-1 rounded-2xl p-4 active:opacity-90"
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          >
+            <View
+              className="w-9 h-9 rounded-xl items-center justify-center mb-2.5"
+              style={{ backgroundColor: 'rgba(129,140,248,0.15)' }}
+            >
+              <Ionicons name="time" size={18} color={colors.accent} />
+            </View>
+            <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>Timeline</Text>
+            <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 2 }}>
+              Incidents & event history
+            </Text>
+          </Pressable>
         </View>
 
         {!isPremium && (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { colors } from '../../src/constants/theme';
 import { useSensors } from '../../src/lib/sensorStore';
 import { useLiveData } from '../../src/lib/useLiveData';
@@ -154,9 +155,10 @@ function SeveritySection({
 }
 
 export default function AlertsScreen() {
+  const router = useRouter();
   const { sensors: stored } = useSensors();
   const { liveSensors: sensors } = useLiveData(stored);
-  const { alerts, counts } = useSmartAlerts(sensors);
+  const { alerts, counts, mutedCount } = useSmartAlerts(sensors);
   const session = useAlertSession();
 
   // Stamp first-seen times + last-checked whenever alerts re-evaluate.
@@ -197,9 +199,23 @@ export default function AlertsScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="mb-1">
-          <Text style={{ color: colors.textFaint, fontSize: 13 }}>Monitoring</Text>
-          <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>Smart Alerts</Text>
+        <View className="mb-1 flex-row items-end justify-between">
+          <View>
+            <Text style={{ color: colors.textFaint, fontSize: 13 }}>Monitoring</Text>
+            <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>Smart Alerts</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/events')}
+            className="flex-row items-center px-3 py-2 rounded-full active:opacity-70"
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+            accessibilityRole="button"
+            accessibilityLabel="Open event timeline"
+          >
+            <Ionicons name="time-outline" size={15} color={colors.accent} />
+            <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700', marginLeft: 5 }}>
+              Timeline
+            </Text>
+          </Pressable>
         </View>
 
         {/* Summary banner */}
@@ -334,6 +350,28 @@ export default function AlertsScreen() {
               </Text>
             </View>
           </View>
+        )}
+
+        {/* Muted-by-preferences note */}
+        {mutedCount > 0 && (
+          <Pressable
+            onPress={() => router.push('/settings/preferences')}
+            className="flex-row items-center justify-center rounded-2xl active:opacity-80"
+            style={{
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              marginTop: 16,
+            }}
+          >
+            <Ionicons name="notifications-off-outline" size={14} color={colors.textFaint} />
+            <Text style={{ color: colors.textFaint, fontSize: 12, marginLeft: 6 }}>
+              {mutedCount} alert{mutedCount === 1 ? '' : 's'} hidden by notification preferences
+            </Text>
+            <Ionicons name="chevron-forward" size={13} color={colors.textFaint} style={{ marginLeft: 4 }} />
+          </Pressable>
         )}
 
         {/* Session footer */}

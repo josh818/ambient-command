@@ -1,9 +1,16 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors } from '../../src/constants/theme';
 import { usePreferences, type Preferences } from '../../src/lib/preferencesStore';
+import {
+  useNotificationPrefs,
+  isInQuietHours,
+  formatHour,
+  type NotificationPrefs,
+} from '../../src/lib/notificationPrefs';
 
 function ToggleRow({
   icon,
@@ -47,6 +54,54 @@ function ToggleRow({
   );
 }
 
+function HourStepper({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (h: number) => void;
+}) {
+  return (
+    <View className="flex-1 items-center rounded-xl py-3" style={{ backgroundColor: colors.surfaceAlt }}>
+      <Text style={{ color: colors.textFaint, fontSize: 11, fontWeight: '700', letterSpacing: 0.6 }}>
+        {label}
+      </Text>
+      <View className="flex-row items-center" style={{ marginTop: 8, gap: 14 }}>
+        <Pressable
+          onPress={() => onChange((value + 23) % 24)}
+          className="w-8 h-8 rounded-lg items-center justify-center active:opacity-70"
+          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          accessibilityLabel={`${label} earlier`}
+        >
+          <Ionicons name="remove" size={16} color={colors.text} />
+        </Pressable>
+        <Text
+          style={{
+            color: colors.text,
+            fontSize: 15,
+            fontWeight: '800',
+            minWidth: 74,
+            textAlign: 'center',
+            fontVariant: ['tabular-nums'],
+          }}
+        >
+          {formatHour(value)}
+        </Text>
+        <Pressable
+          onPress={() => onChange((value + 1) % 24)}
+          className="w-8 h-8 rounded-lg items-center justify-center active:opacity-70"
+          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          accessibilityLabel={`${label} later`}
+        >
+          <Ionicons name="add" size={16} color={colors.text} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function SectionLabel({ children }: { children: string }) {
   return (
     <Text
@@ -68,10 +123,23 @@ function SectionLabel({ children }: { children: string }) {
 export default function PreferencesScreen() {
   const router = useRouter();
   const { prefs, setPref, reset } = usePreferences();
+  const { prefs: cloudPrefs, save } = useNotificationPrefs();
+
+  // Optimistic overlay so switches respond instantly while the Convex
+  // mutation round-trips; the live query converges to the same values.
+  const [override, setOverride] = useState<Partial<NotificationPrefs>>({});
+  const notif: NotificationPrefs = { ...cloudPrefs, ...override };
+
+  const setNotif = <K extends keyof NotificationPrefs>(key: K, value: NotificationPrefs[K]) => {
+    setOverride((o) => ({ ...o, [key]: value }));
+    void save({ [key]: value });
+  };
 
   const toggle = (key: keyof Preferences) => (v: boolean) => {
     void setPref(key, v as never);
   };
+
+  const quietNow = isInQuietHours(notif);
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
@@ -100,36 +168,86 @@ export default function PreferencesScreen() {
           <ToggleRow
             icon="water-outline"
             label="Leak Alerts"
-            sub="Notify on water detection"
+            sub="Critical leak alerts always surface"
             tint={colors.accent}
-            value={prefs.leakAlerts}
-            onValueChange={toggle('leakAlerts')}
-          />
-          <ToggleRow
-            icon="snow-outline"
-            label="Freeze Alerts"
-            sub="Warn on freezing temperatures"
-            tint={colors.accent}
-            value={prefs.freezeAlerts}
-            onValueChange={toggle('freezeAlerts')}
+            value={notif.leak}
+            onValueChange={(v) => setNotif('leak', v)}
           />
           <ToggleRow
             icon="cloud-offline-outline"
-            label="Offline Alerts"
-            sub="Notify when a sensor drops off"
+            label="Connectivity Alerts"
+            sub="Sensor offline & weak-signal warnings"
             tint={colors.warning}
-            value={prefs.offlineAlerts}
-            onValueChange={toggle('offlineAlerts')}
+            value={notif.connectivity}
+            onValueChange={(v) => setNotif('connectivity', v)}
           />
           <ToggleRow
             icon="battery-half-outline"
-            label="Low Battery Alerts"
-            sub="Warn below 20% battery"
+            label="Battery Alerts"
+            sub="Low & critical battery warnings"
             tint={colors.warning}
-            value={prefs.batteryAlerts}
-            onValueChange={toggle('batteryAlerts')}
+            value={notif.battery}
+            onValueChange={(v) => setNotif('battery', v)}
+          />
+          <ToggleRow
+            icon="speedometer-outline"
+            label="High-Usage Alerts"
+            sub="When usage runs ahead of your goal"
+            tint={colors.primary}
+            value={notif.usage}
+            onValueChange={(v) => setNotif('usage', v)}
             last
           />
+        </View>
+
+        <SectionLabel>Quiet Hours</SectionLabel>
+        <View
+          className="rounded-2xl overflow-hidden"
+          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+        >
+          <ToggleRow
+            icon="moon-outline"
+            label="Quiet Hours"
+            sub={
+              notif.quietHoursEnabled
+                ? `Non-critical alerts held ${formatHour(notif.quietHoursStart)} – ${formatHour(
+                    notif.quietHoursEnd,
+                  )}${quietNow ? ' · active now' : ''}`
+                : 'Suppress non-critical alerts overnight'
+            }
+            tint={colors.accent}
+            value={notif.quietHoursEnabled}
+            onValueChange={(v) => setNotif('quietHoursEnabled', v)}
+            last={!notif.quietHoursEnabled}
+          />
+          {notif.quietHoursEnabled && (
+            <View style={{ padding: 16, paddingTop: 4 }}>
+              <View className="flex-row" style={{ gap: 14 }}>
+                <HourStepper
+                  label="STARTS"
+                  value={notif.quietHoursStart}
+                  onChange={(h) => setNotif('quietHoursStart', h)}
+                />
+                <HourStepper
+                  label="ENDS"
+                  value={notif.quietHoursEnd}
+                  onChange={(h) => setNotif('quietHoursEnd', h)}
+                />
+              </View>
+              <View className="flex-row items-start" style={{ marginTop: 12 }}>
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={14}
+                  color={colors.textFaint}
+                  style={{ marginTop: 1 }}
+                />
+                <Text style={{ color: colors.textFaint, fontSize: 11, marginLeft: 6, flex: 1, lineHeight: 16 }}>
+                  During quiet hours, warnings and info alerts are held. Critical alerts — including
+                  active water leaks — always break through.
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <SectionLabel>Delivery</SectionLabel>
@@ -225,7 +343,8 @@ export default function PreferencesScreen() {
         </Pressable>
 
         <Text style={{ color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: 20 }}>
-          Preferences are saved on this device.
+          Alert notifications & quiet hours sync to your account. Delivery and display settings are
+          saved on this device.
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 import type { Sensor } from './mockData';
 import type { AlertLevel } from '../components/AlertNotification';
+import { useNotificationPrefs, filterVisibleAlerts } from './notificationPrefs';
 
 // Priority-based alert engine for a water-leak-only product.
 // Evaluates the live sensor set against leak-specific rules and produces
 // prioritized alerts. Active water leaks are always surfaced first, followed
 // by connectivity loss, battery and signal warnings.
+//
+// NOTIFICATION GATING: useSmartAlerts applies the user's cloud notification
+// preferences (src/lib/notificationPrefs.ts). Every alert is still evaluated
+// internally (allAlerts), but muted categories and quiet-hours-suppressed
+// non-critical alerts never surface in `alerts` / the alert center. Critical
+// leak alerts always surface.
 
-export type AlertCategory = 'leak' | 'offline' | 'battery' | 'signal';
+export type AlertCategory = 'leak' | 'offline' | 'battery' | 'signal' | 'usage';
 
 export interface SmartAlert {
   id: string;
@@ -31,6 +38,7 @@ const categoryMeta: Record<
   offline: { icon: 'cloud-offline', label: 'Connectivity' },
   battery: { icon: 'battery-dead', label: 'Battery' },
   signal: { icon: 'cellular', label: 'Signal' },
+  usage: { icon: 'speedometer', label: 'High Usage' },
 };
 
 export function alertCategoryMeta(category: AlertCategory) {
@@ -132,13 +140,19 @@ export function evaluateAlerts(sensors: Sensor[]): SmartAlert[] {
 }
 
 export function useSmartAlerts(sensors: Sensor[]) {
+  const { prefs } = useNotificationPrefs();
   return useMemo(() => {
-    const alerts = evaluateAlerts(sensors);
+    // Every alert is still evaluated (allAlerts) — muting only hides them
+    // from the UI, it never deletes the underlying condition.
+    const allAlerts = evaluateAlerts(sensors);
+    const alerts = filterVisibleAlerts(allAlerts, prefs);
     const critical = alerts.filter((a) => a.level === 'danger');
     const warnings = alerts.filter((a) => a.level === 'warning');
     const info = alerts.filter((a) => a.level === 'info');
     return {
       alerts,
+      allAlerts,
+      mutedCount: allAlerts.length - alerts.length,
       critical,
       warnings,
       info,
@@ -149,5 +163,5 @@ export function useSmartAlerts(sensors: Sensor[]) {
         info: info.length,
       },
     };
-  }, [sensors]);
+  }, [sensors, prefs]);
 }

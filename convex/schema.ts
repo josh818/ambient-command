@@ -83,6 +83,17 @@ export default defineSchema({
     propertyLabel: v.optional(v.string()),
     theme: v.optional(v.string()),
     consoleFavorites: v.optional(v.array(v.string())),
+    // Water-usage conservation goal (monthly target, in the server metric's units)
+    usageGoal: v.optional(v.number()),
+    // Notification category toggles (default ON when unset)
+    notifyLeak: v.optional(v.boolean()),
+    notifyConnectivity: v.optional(v.boolean()),
+    notifyBattery: v.optional(v.boolean()),
+    notifyUsage: v.optional(v.boolean()),
+    // Quiet hours — local hours 0-23; non-critical alerts suppressed inside the window
+    quietHoursEnabled: v.optional(v.boolean()),
+    quietHoursStart: v.optional(v.number()),
+    quietHoursEnd: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"]),

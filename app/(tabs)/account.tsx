@@ -180,7 +180,7 @@ export default function AccountScreen() {
           <Row
             icon="notifications-outline"
             label="Alert Preferences"
-            sub="Leak, freeze & offline alerts"
+            sub="Leak, connectivity, battery & quiet hours"
             onPress={() => router.push('/settings/preferences')}
           />
           <Row
