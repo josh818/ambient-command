@@ -9,15 +9,21 @@
 //       spelling "Measments" — do not "fix" it, it must match the server).
 // Auth is a bearer token sent on every request.
 
-export const API_BASE = 'https://asvupdateserver.ddns.net:2001/tms/xdata/MyService';
+// All requests go through the Convex HTTP proxy (see convex/http.ts, the
+// /bh/ routes) instead of hitting the hardware server directly. The hardware
+// server (TMS XData) doesn't answer CORS preflights, so direct browser
+// fetches fail with "Failed to fetch" even though the server is up — the
+// proxy fetches server-side and adds proper CORS headers. It also keeps the
+// upstream bearer token out of this shipped bundle.
+const CONVEX_SITE =
+  process.env.EXPO_PUBLIC_CONVEX_SITE_URL || 'https://formal-guanaco-79.convex.site';
 
-const BEARER_TOKEN = 'secret_token';
+export const API_BASE = `${CONVEX_SITE}/bh`;
 
 function authHeaders(): Record<string, string> {
-  return {
-    Accept: 'application/json',
-    ...(BEARER_TOKEN ? { Authorization: `Bearer ${BEARER_TOKEN}` } : {}),
-  };
+  // No Authorization header needed — the proxy injects the upstream token.
+  // Keeping the request header-light also avoids an extra CORS preflight.
+  return { Accept: 'application/json' };
 }
 
 async function getJson<T>(path: string): Promise<T> {
