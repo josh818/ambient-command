@@ -21,13 +21,26 @@ const DEMO_MODULE_IDS = [
   "132062666137092",
 ];
 
-// Per-test-account device assignments (see convex/access.ts). The demo
-// account gets the full demo roster; the tester account only gets the first
-// two modules so it demonstrates per-account scoping side by side.
+// The only two modules currently reporting real measurement data on the
+// server. Both test accounts should see at least one so the Data Points
+// screens have live telemetry to show.
+const LIVE_MODULE_IDS = ["132062666074512", "132062666137092"] as const;
+
+// Friendly display names for the live modules (sensorSettings, add-if-missing).
+const LIVE_MODULE_NAMES: Record<string, string> = {
+  "132062666074512": "Main Line Monitor",
+  "132062666137092": "Utility Room",
+};
+
+// Per-test-account device assignments (see convex/access.ts). Seeding is
+// ADD-IF-MISSING per module — existing rows are always kept, and any module
+// listed here that the account is missing gets a new row.
 // NOTE: neither of these emails is an admin.
 const DEMO_DEVICE_ASSIGNMENTS: Record<string, string[]> = {
-  "demo@ambientcommand.app": DEMO_MODULE_IDS,
-  "josh-tester@ambientcommand.app": DEMO_MODULE_IDS.slice(0, 2),
+  // Demo account: the full demo roster PLUS the live-reporting module.
+  "demo@ambientcommand.app": [...DEMO_MODULE_IDS, "132062666074512"],
+  // Tester account: both live-reporting modules.
+  "josh-tester@ambientcommand.app": [...LIVE_MODULE_IDS],
 };
 
 /**
@@ -36,9 +49,11 @@ const DEMO_DEVICE_ASSIGNMENTS: Record<string, string[]> = {
  * Also upserts the account's deviceAssignments rows for the two known test
  * accounts so device scoping is demonstrable out of the box.
  *
- * Idempotent: only inserts scenes when the user has none, only inserts
- * sensorSettings when the user has none, and only inserts deviceAssignments
- * when the email has none. Safe to call on every sign-in.
+ * Idempotent: only inserts scenes when the user has none, only inserts the
+ * bulk sensorSettings when the user has none (plus add-if-missing friendly
+ * names for the two live modules), and inserts deviceAssignments
+ * ADD-IF-MISSING per module (existing rows are never removed or changed).
+ * Safe to call on every sign-in.
  */
 export const ensureDemoData = mutation({
   args: {},
@@ -110,6 +125,8 @@ export const ensureDemoData = mutation({
       .withIndex("by_user", (q: any) => q.eq("userId", user._id))
       .collect();
 
+    const settingIds = new Set(existingSettings.map((s: any) => s.sensorId));
+
     if (existingSettings.length === 0) {
       const demoSettings = [
         {
@@ -152,8 +169,26 @@ export const ensureDemoData = mutation({
           alertSensitivity: setting.alertSensitivity,
           updatedAt: now,
         });
+        settingIds.add(setting.sensorId);
         settingsCreated++;
       }
+    }
+
+    // Friendly names for the two live-reporting modules — add-if-missing per
+    // sensorId (never overwrites a name the user already has).
+    for (const moduleId of LIVE_MODULE_IDS) {
+      if (settingIds.has(moduleId)) continue;
+      await ctx.db.insert("sensorSettings", {
+        userId: user._id,
+        sensorId: moduleId,
+        customName: LIVE_MODULE_NAMES[moduleId],
+        isOn: true,
+        alertsEnabled: true,
+        alertSensitivity: "balanced",
+        updatedAt: now,
+      });
+      settingIds.add(moduleId);
+      settingsCreated++;
     }
 
     // --- Device assignments -------------------------------------------------
@@ -169,16 +204,19 @@ export const ensureDemoData = mutation({
         .withIndex("by_email", (q: any) => q.eq("userEmail", email))
         .collect();
 
-      if (existingAssignments.length === 0) {
-        for (const moduleId of wantedModuleIds) {
-          await ctx.db.insert("deviceAssignments", {
-            userEmail: email,
-            moduleId,
-            assignedAt: now,
-            assignedBy: "demo-seed",
-          });
-          assignmentsCreated++;
-        }
+      // ADD-IF-MISSING per module: keep every existing row, insert only the
+      // modules from the wanted set that the account doesn't have yet.
+      const assignedIds = new Set(existingAssignments.map((a: any) => a.moduleId));
+      for (const moduleId of wantedModuleIds) {
+        if (assignedIds.has(moduleId)) continue;
+        await ctx.db.insert("deviceAssignments", {
+          userEmail: email,
+          moduleId,
+          assignedAt: now,
+          assignedBy: "demo-seed",
+        });
+        assignedIds.add(moduleId);
+        assignmentsCreated++;
       }
     }
 

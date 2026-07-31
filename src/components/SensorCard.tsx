@@ -13,6 +13,7 @@ import { StatusPill } from './StatusPill';
 import { LiveDot } from './LiveDot';
 import { Sparkline } from './Sparkline';
 import { useSparkline } from '../lib/sparkHistory';
+import { useMeasurementData, WINDOW_24H_MS } from '../lib/measurementData';
 
 function batteryIcon(volts: number | undefined): {
   name: string;
@@ -28,6 +29,56 @@ function signalIcon(sensor: Sensor): { name: string; color: string } {
   if (!sensor.hasTelemetry) return { name: 'cellular-outline', color: colors.textFaint };
   if (sensor.status === 'offline') return { name: 'cloud-offline-outline', color: colors.offline };
   return { name: 'cellular', color: colors.online };
+}
+
+// Compact "temp · battery · valve · flow" strip from real 24h measurements.
+// Shares useMeasurementData's module-wide cache with the detail screen, so
+// the list adds no extra requests. Hidden entirely when there's no data.
+function DataStrip({ sensorId }: { sensorId: string }) {
+  const { loading, derived: d } = useMeasurementData(sensorId, WINDOW_24H_MS);
+  if (loading || !d.hasData) return null;
+
+  const parts: { text: string; color?: string }[] = [];
+  if (d.temperatureC !== null) {
+    parts.push({ text: `${Math.round(d.temperatureC * 10) / 10}°C` });
+  }
+  if (d.batteryVolts !== null) {
+    parts.push({ text: `${d.batteryVolts.toFixed(2)}V` });
+  }
+  if (d.valveOpen !== null) {
+    parts.push({
+      text: d.valveOpen ? 'Open' : 'Closed',
+      color: d.valveOpen ? colors.online : colors.danger,
+    });
+  }
+  if (d.flowRateHz !== null) {
+    parts.push(
+      d.flowRateHz > 0
+        ? { text: `${Math.round(d.flowRateHz * 10) / 10} Hz`, color: colors.primary }
+        : { text: 'Idle' },
+    );
+  }
+  if (parts.length === 0) return null;
+
+  return (
+    <View
+      className="flex-row items-center flex-wrap mt-2 pt-2"
+      style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+    >
+      <Ionicons name="pulse-outline" size={11} color={colors.textFaint} />
+      {parts.map((p, i) => (
+        <View key={i} className="flex-row items-center">
+          {i > 0 && (
+            <Text style={{ color: colors.textFaint, fontSize: 11, marginHorizontal: 5 }}>·</Text>
+          )}
+          {i === 0 && <View style={{ width: 5 }} />}
+          <Text style={{ color: p.color ?? colors.textMuted, fontSize: 11, fontWeight: '600' }}>
+            {p.text}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
 }
 
 export function SensorCard({ sensor }: { sensor: Sensor }) {
@@ -147,6 +198,9 @@ export function SensorCard({ sensor }: { sensor: Sensor }) {
           )}
         </View>
       </View>
+
+      {/* 24h live-data strip (only for sensors with recent measurements) */}
+      <DataStrip sensorId={sensor.id} />
     </Pressable>
   );
 }

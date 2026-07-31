@@ -19,10 +19,17 @@ import {
   sensorTypeMeta,
   formatRelativeTime,
   formatSensorValue,
+  type Sensor,
 } from '../../src/lib/mockData';
 import { StatusPill } from '../../src/components/StatusPill';
 import { LiveModuleData } from '../../src/components/LiveModuleData';
 import { useDaySeries } from '../../src/lib/sparkHistory';
+import {
+  useMeasurementData,
+  useModuleLocation,
+  WINDOW_24H_MS,
+  WINDOW_7D_MS,
+} from '../../src/lib/measurementData';
 
 function StatTile({
   label,
@@ -47,6 +54,405 @@ function StatTile({
       >
         {value}
       </Text>
+    </View>
+  );
+}
+
+// ── Data Points section ─────────────────────────────────────────────────────
+// 12-point telemetry grid built ONLY from real GetModuleMeasments records
+// (via useMeasurementData) + location fields from GetModuleListing.
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+function fmtDuration(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} min ${sec % 60 ? `${sec % 60}s` : ''}`.trim();
+  const hr = Math.floor(min / 60);
+  return `${hr}h ${min % 60}m`;
+}
+
+function batteryTint(volts: number): string {
+  if (volts > 3.7) return colors.online;
+  if (volts >= 3.4) return colors.warning;
+  return colors.danger;
+}
+
+function DataPointTile({
+  icon,
+  iconColor,
+  label,
+  value,
+  sub,
+  valueColor,
+  pillBg,
+  muted,
+  fullWidth,
+}: {
+  icon: string;
+  iconColor?: string;
+  label: string;
+  value: string;
+  sub?: string;
+  valueColor?: string;
+  /** When set, the value renders as a color-coded pill. */
+  pillBg?: string;
+  muted?: boolean;
+  fullWidth?: boolean;
+}) {
+  return (
+    <View
+      className="rounded-xl p-3"
+      style={{
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: 1,
+        borderColor: colors.border,
+        flexGrow: 1,
+        flexBasis: fullWidth ? '100%' : '42%',
+        opacity: muted ? 0.65 : 1,
+      }}
+    >
+      <View className="flex-row items-center">
+        <Ionicons name={icon as any} size={13} color={iconColor ?? colors.textMuted} />
+        <Text
+          numberOfLines={1}
+          style={{
+            color: colors.textFaint,
+            fontSize: 10,
+            fontWeight: '700',
+            letterSpacing: 0.6,
+            marginLeft: 5,
+            flex: 1,
+          }}
+        >
+          {label.toUpperCase()}
+        </Text>
+      </View>
+      {pillBg ? (
+        <View
+          className="self-start rounded-full px-2.5 py-1"
+          style={{ backgroundColor: pillBg, marginTop: 6 }}
+        >
+          <Text style={{ color: valueColor ?? colors.text, fontSize: 12, fontWeight: '800' }}>
+            {value}
+          </Text>
+        </View>
+      ) : (
+        <Text
+          numberOfLines={1}
+          style={{
+            color: valueColor ?? (muted ? colors.textFaint : colors.text),
+            fontSize: 15,
+            fontWeight: '800',
+            marginTop: 6,
+          }}
+        >
+          {value}
+        </Text>
+      )}
+      {sub ? (
+        <Text numberOfLines={1} style={{ color: colors.textFaint, fontSize: 11, marginTop: 3 }}>
+          {sub}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function DataPointsSection({ sensor }: { sensor: Sensor }) {
+  const router = useRouter();
+  const [win, setWin] = useState<'24h' | '7d'>('24h');
+  const windowMs = win === '24h' ? WINDOW_24H_MS : WINDOW_7D_MS;
+  const { loading, derived: d, records } = useMeasurementData(sensor.id, windowMs);
+  const loc = useModuleLocation(sensor.id);
+
+  const windowLabel = win === '24h' ? 'last 24h' : 'last 7 days';
+
+  // Tiles that don't depend on measurements — shown even with no telemetry.
+  const locationTile = (
+    <DataPointTile
+      key="location"
+      icon="location"
+      label="Location"
+      value={loc?.name ?? sensor.location ?? '—'}
+      sub={
+        [loc?.city, loc?.state].filter(Boolean).join(', ') || 'From module listing'
+      }
+      fullWidth
+    />
+  );
+  const conductivityTile = (
+    <DataPointTile
+      key="conductivity"
+      icon="flask-outline"
+      label="Conductivity"
+      value="Not reported"
+      sub="Hardware doesn't send this yet"
+      muted
+    />
+  );
+
+  const flushVal =
+    d.flushes.count === 0
+      ? 'None'
+      : d.flushes.lastRunRecords === 1
+        ? '~1 reading'
+        : fmtDuration(d.flushes.lastDurationSec ?? 0);
+  const flushSub =
+    d.flushes.count === 0
+      ? `No flushes in ${windowLabel}`
+      : d.flushes.avgDurationSec === 0
+        ? 'Avg: ~1 reading each'
+        : `Avg ${fmtDuration(d.flushes.avgDurationSec ?? 0)}`;
+
+  const alarms = d.alarmEvents;
+  const alarmTint = alarms.count > 0 ? colors.danger : colors.text;
+
+  return (
+    <View
+      className="rounded-2xl mt-4"
+      style={{
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: 20,
+      }}
+    >
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center">
+          <Ionicons name="grid" size={14} color={colors.primary} />
+          <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700', marginLeft: 6 }}>
+            Data Points
+          </Text>
+        </View>
+        <View className="flex-row" style={{ gap: 8 }}>
+          {(['24h', '7d'] as const).map((k) => {
+            const active = win === k;
+            return (
+              <Pressable
+                key={k}
+                onPress={() => setWin(k)}
+                className="rounded-full px-3 py-1 active:opacity-70"
+                style={{
+                  backgroundColor: active ? 'rgba(45,212,191,0.15)' : colors.surfaceAlt,
+                  borderWidth: 1,
+                  borderColor: active ? colors.primary : colors.border,
+                }}
+              >
+                <Text
+                  style={{
+                    color: active ? colors.primary : colors.textMuted,
+                    fontSize: 11,
+                    fontWeight: '700',
+                  }}
+                >
+                  {k === '24h' ? '24H' : '7D'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {loading ? (
+        <View className="items-center py-8">
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 10 }}>
+            Fetching telemetry…
+          </Text>
+        </View>
+      ) : !d.hasData ? (
+        <View>
+          <View
+            className="rounded-xl p-4 flex-row items-start"
+            style={{ backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}
+          >
+            <Ionicons name="cloud-offline-outline" size={18} color={colors.textFaint} style={{ marginTop: 1 }} />
+            <View style={{ marginLeft: 10, flex: 1 }}>
+              <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '700' }}>
+                Awaiting telemetry
+              </Text>
+              <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 3, lineHeight: 17 }}>
+                This sensor hasn't reported in this window.
+              </Text>
+            </View>
+          </View>
+          <View className="flex-row flex-wrap" style={{ gap: 16, marginTop: 16 }}>
+            {locationTile}
+            {conductivityTile}
+          </View>
+        </View>
+      ) : (
+        <View>
+          <Text style={{ color: colors.textFaint, fontSize: 11, marginBottom: 12 }}>
+            {records.length} records · {windowLabel} · live server data
+          </Text>
+          <View className="flex-row flex-wrap" style={{ gap: 16 }}>
+            {/* 1 — Water Flow Rate */}
+            <DataPointTile
+              icon="water"
+              iconColor={colors.primary}
+              label="Water Flow Rate"
+              value={
+                d.flowRateHz === null
+                  ? '—'
+                  : d.flowRateHz > 0
+                    ? `${round1(d.flowRateHz)} Hz`
+                    : 'Idle'
+              }
+              valueColor={d.flowRateHz && d.flowRateHz > 0 ? colors.primary : undefined}
+              sub="Flow sensor frequency"
+            />
+            {/* 2 — Length of Flush */}
+            <DataPointTile
+              icon="timer-outline"
+              label="Length of Flush"
+              value={flushVal}
+              sub={flushSub}
+            />
+            {/* 3 — Number of Flushes */}
+            <DataPointTile
+              icon="repeat"
+              label="Number of Flushes"
+              value={String(d.flushes.count)}
+              sub={`In ${windowLabel}`}
+            />
+            {/* 4 — Water Pressure */}
+            <DataPointTile
+              icon="speedometer-outline"
+              label="Water Pressure"
+              value={
+                d.pressure.freqHz === null
+                  ? '—'
+                  : d.pressure.freqHz > 0
+                    ? `${round1(d.pressure.freqHz)} Hz`
+                    : 'No pressure signal'
+              }
+              sub={
+                d.pressure.switchOn === null
+                  ? 'Switch state unknown'
+                  : d.pressure.switchOn
+                    ? 'Pressure switch active'
+                    : 'Pressure switch idle'
+              }
+            />
+            {/* 5 — Conductivity (hardware doesn't report it) */}
+            {conductivityTile}
+            {/* 6 — Temperature */}
+            <DataPointTile
+              icon="thermometer-outline"
+              label="Temperature"
+              value={d.temperatureC === null ? '—' : `${round1(d.temperatureC)}°C`}
+              sub={
+                d.temperatureC === null
+                  ? undefined
+                  : `${round1((d.temperatureC * 9) / 5 + 32)}°F`
+              }
+            />
+            {/* 7 — Location (full-width, from module listing) */}
+            {locationTile}
+            {/* 8 — Water Shut Off */}
+            <DataPointTile
+              icon="power"
+              label="Water Shut Off"
+              value={d.valveOpen === null ? '—' : d.valveOpen ? 'OPEN' : 'CLOSED'}
+              valueColor={
+                d.valveOpen === null
+                  ? colors.textFaint
+                  : d.valveOpen
+                    ? colors.online
+                    : colors.danger
+              }
+              pillBg={
+                d.valveOpen === null
+                  ? colors.surface
+                  : d.valveOpen
+                    ? 'rgba(52,211,153,0.15)'
+                    : 'rgba(248,113,113,0.15)'
+              }
+              sub={d.valveMode ? `Mode: ${d.valveMode}` : 'Valve state from telemetry'}
+            />
+            {/* 9 — Alarm Events */}
+            <DataPointTile
+              icon={alarms.count > 0 ? 'warning' : 'shield-checkmark-outline'}
+              iconColor={alarms.count > 0 ? colors.danger : colors.textMuted}
+              label="Alarm Events"
+              value={String(alarms.count)}
+              valueColor={alarmTint}
+              sub={
+                alarms.count > 0 && alarms.lastAt
+                  ? `Last: ${formatRelativeTime(alarms.lastAt)}${alarms.lastSource ? ` · ${alarms.lastSource}` : ''}`
+                  : `None in ${windowLabel}`
+              }
+            />
+            {/* 10 — Number of Shutoffs */}
+            <DataPointTile
+              icon="lock-closed-outline"
+              label="Number of Shutoffs"
+              value={String(d.shutoffs)}
+              sub="Valve open → closed"
+            />
+            {/* 11 — Number of Valve Resets */}
+            <DataPointTile
+              icon="refresh-outline"
+              label="Number of Valve Resets"
+              value={String(d.valveResets)}
+              sub="Valve closed → open"
+            />
+            {/* 12 — Battery Voltage */}
+            <DataPointTile
+              icon="battery-half-outline"
+              iconColor={d.batteryVolts !== null ? batteryTint(d.batteryVolts) : undefined}
+              label="Battery Voltage"
+              value={d.batteryVolts === null ? '—' : `${d.batteryVolts.toFixed(2)} V`}
+              valueColor={d.batteryVolts !== null ? batteryTint(d.batteryVolts) : undefined}
+              sub={
+                d.batteryVolts === null
+                  ? undefined
+                  : d.batteryVolts > 3.7
+                    ? 'Healthy'
+                    : d.batteryVolts >= 3.4
+                      ? 'Getting low'
+                      : 'Low — service soon'
+              }
+            />
+          </View>
+
+          {/* Call to action — leak detected in window */}
+          {alarms.count > 0 && (
+            <View
+              className="rounded-xl p-4 flex-row items-center"
+              style={{
+                backgroundColor: 'rgba(248,113,113,0.10)',
+                borderWidth: 1,
+                borderColor: 'rgba(248,113,113,0.4)',
+                marginTop: 16,
+              }}
+            >
+              <Ionicons name="warning" size={20} color={colors.danger} />
+              <View style={{ flex: 1, marginLeft: 10, paddingRight: 10 }}>
+                <Text style={{ color: colors.danger, fontSize: 13, fontWeight: '800' }}>
+                  Leak detected
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2, lineHeight: 16 }}>
+                  Consider shutting off water to this line.
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => router.push('/console')}
+                className="rounded-xl px-3 py-2 active:opacity-80"
+                style={{ backgroundColor: colors.danger }}
+              >
+                <Text style={{ color: colors.bg, fontSize: 12, fontWeight: '800' }}>
+                  Open Console
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -276,6 +682,9 @@ export default function SensorDetail() {
               </View>
             </View>
           )}
+
+          {/* Rich per-sensor data points from raw measurement records */}
+          <DataPointsSection sensor={sensor} />
 
           <Pressable
             onPress={() => router.push(`/sensor/${sensor.id}/history`)}
