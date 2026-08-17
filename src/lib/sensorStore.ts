@@ -2,7 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { useSession } from '../../lib/auth-client';
 import { api } from '../../convex/_generated/api';
-import { mockSensors, type Sensor } from './mockData';
+import { mockSensors, rosterEntry, type Sensor } from './mockData';
+import { useLiveRoster, type RosterEntry } from './liveRoster';
 import { notifySuccess, notifyError } from './notify';
 import { useDeviceAccess } from './deviceAccess';
 
@@ -23,10 +24,29 @@ type SettingDoc = {
   isOn?: boolean;
 };
 
-function mergeSensors(settings: SettingDoc[] | undefined): Sensor[] {
+/**
+ * Base catalog = static snapshot UNION live server roster. Devices
+ * provisioned after this build appear automatically; live names/locations
+ * refresh the stale static copies. Roster unreachable → static list only.
+ */
+function buildBaseSensors(live: RosterEntry[] | null): Sensor[] {
+  const byId = new Map<string, Sensor>(mockSensors.map((s) => [s.id, { ...s }]));
+  for (const e of live ?? []) {
+    const existing = byId.get(e.id);
+    if (existing) {
+      if (e.unitName) existing.defaultName = e.unitName;
+      if (e.locationName) existing.location = e.locationName;
+    } else {
+      byId.set(e.id, rosterEntry(e.id, e.unitName || `Device ${e.id.slice(-4)}`, e.locationName));
+    }
+  }
+  return [...byId.values()];
+}
+
+function mergeSensors(settings: SettingDoc[] | undefined, base: Sensor[]): Sensor[] {
   const map = new Map<string, SettingDoc>();
   (settings ?? []).forEach((s) => map.set(s.sensorId, s));
-  return mockSensors.map((s) => {
+  return base.map((s) => {
     const saved = map.get(s.id);
     return {
       ...s,
@@ -47,17 +67,18 @@ export function useSensors() {
   const updateSetting = useMutation(api.mutations.updateSensorSetting);
 
   const access = useDeviceAccess();
+  const roster = useLiveRoster();
 
   const sensors = useMemo(() => {
     // Access still resolving → show nothing rather than flashing the full
     // fleet before the per-account filter is known.
     if (access.loading) return [];
-    const merged = mergeSensors(settings);
+    const merged = mergeSensors(settings, buildBaseSensors(roster.entries));
     // null = unrestricted (admin / signed out) — current behavior.
     if (access.moduleIds === null) return merged;
     const allowed = new Set(access.moduleIds);
     return merged.filter((s) => allowed.has(s.id));
-  }, [settings, access.loading, access.moduleIds]);
+  }, [settings, access.loading, access.moduleIds, roster.entries]);
 
   const findSetting = useCallback(
     (sensorId: string) => (settings ?? []).find((s) => s.sensorId === sensorId),

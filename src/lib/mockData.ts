@@ -43,7 +43,7 @@ export const sensorTypeMeta: Record<
 
 // Roster verbatim from GetModuleListing (7 records). All telemetry N/A
 // until fetched live from the server.
-function rosterEntry(id: string, unitName: string, locationName: string): Sensor {
+export function rosterEntry(id: string, unitName: string, locationName: string): Sensor {
   return {
     id,
     defaultName: unitName,
