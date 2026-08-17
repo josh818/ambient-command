@@ -34,11 +34,15 @@ async function getJson<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Connectivity check — server-side Sum endpoint. */
-export async function checkSum(a: number, b: number): Promise<number> {
-  const data = await getJson<{ value?: number } | number>(`/Sum?A=${a}&B=${b}`);
-  if (typeof data === 'number') return data;
-  return data.value ?? 0;
+/**
+ * Connectivity check. The server used to expose a trivial Sum endpoint for
+ * this, but a server update removed it (it now returns "Unknown path"),
+ * which made the app think the whole API was down. GetRawDataCount is the
+ * health check now: one call proves both service reachability and database
+ * connectivity.
+ */
+export async function checkService(): Promise<number> {
+  return await getRawDataCount();
 }
 
 /** Returns the raw record count from the database — proves DB connectivity. */

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { checkSum, getRawDataCount, type ConnectivityResult } from './api';
+import { getRawDataCount, type ConnectivityResult } from './api';
 import { notifySuccess, notifyError } from './notify';
 
 // Polls the BH Sensors REST API to prove DB connectivity.
@@ -18,8 +18,8 @@ export function useConnectivity(autoRefreshMs = 30000) {
   const refresh = useCallback(async () => {
     setResult((r) => ({ ...r, status: 'checking', error: null }));
     try {
-      // Sum verifies the service responds; GetRawDataCount proves DB access.
-      await checkSum(2, 2);
+      // One call proves both service reachability and DB access. (The old
+      // Sum endpoint was removed server-side and now 404s.)
       const count = await getRawDataCount();
       if (prevStatus.current === 'offline') {
         notifySuccess('Connection restored', 'Sensor network is back online');

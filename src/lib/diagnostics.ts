@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { API_BASE, checkSum, getRawDataCount } from './api';
+import { API_BASE, getRawDataCount } from './api';
 import type { Sensor } from './mockData';
 
 // A small diagnostic suite that runs a sequence of checks against the
@@ -89,9 +89,9 @@ export function useDiagnostics() {
     update(0, { state: 'running' });
     const t0 = Date.now();
     try {
-      const sum = await checkSum(2, 2);
+      const count = await getRawDataCount();
       const dt = Date.now() - t0;
-      const ok = sum === 4;
+      const ok = count >= 0;
       update(0, {
         state: 'pass',
         detail: `Responded in ${dt}ms`,
@@ -102,7 +102,7 @@ export function useDiagnostics() {
       update(1, { state: 'running' });
       update(1, {
         state: ok ? 'pass' : 'fail',
-        detail: ok ? `Sum(2,2) = ${sum} ✓` : `Unexpected result: ${sum}`,
+        detail: ok ? `Database reachable ✓` : `Unexpected result: ${count}`,
         latencyMs: dt,
       });
       if (!ok) anyFailed = true;
@@ -294,11 +294,11 @@ export function useSystemCheck() {
     // 1 — Connectivity (real round-trip)
     await runStep(0, 800, async () => {
       const t0 = Date.now();
-      const sum = await checkSum(2, 2);
+      const count = await getRawDataCount();
       const dt = Date.now() - t0;
-      return sum === 4
+      return count >= 0
         ? { ok: true, detail: `Command server responded in ${dt}ms` }
-        : { ok: false, detail: `Unexpected response (${sum})` };
+        : { ok: false, detail: `Unexpected response (${count})` };
     });
 
     // 2 — Sensor mesh (live fleet state)
