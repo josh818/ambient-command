@@ -15,6 +15,7 @@ import { colors } from '../../src/constants/theme';
 import { api } from '../../convex/_generated/api';
 import { useDeviceAccess } from '../../src/lib/deviceAccess';
 import { mockSensors } from '../../src/lib/mockData';
+import { useLiveRoster } from '../../src/lib/liveRoster';
 import { notifySuccess, notifyError } from '../../src/lib/notify';
 
 // Admin-only screen: assign fleet modules to user accounts by email.
@@ -198,11 +199,29 @@ export default function DeviceAccessScreen() {
   const unassignDevice = useMutation(api.access.unassignDevice);
   const [busyModuleId, setBusyModuleId] = useState<string | null>(null);
 
+  const roster = useLiveRoster();
+
+  // Static snapshot UNION live server roster, so newly provisioned modules
+  // are assignable without an app update.
+  const fleet = useMemo(() => {
+    const byId = new Map(mockSensors.map((s) => [s.id, { id: s.id, name: s.defaultName, location: s.location }]));
+    for (const e of roster.entries ?? []) {
+      const existing = byId.get(e.id);
+      if (existing) {
+        if (e.unitName) existing.name = e.unitName;
+        if (e.locationName) existing.location = e.locationName;
+      } else {
+        byId.set(e.id, { id: e.id, name: e.unitName || `Device ${e.id.slice(-4)}`, location: e.locationName });
+      }
+    }
+    return [...byId.values()];
+  }, [roster.entries]);
+
   const moduleName = useMemo(() => {
     const map = new Map<string, string>();
-    mockSensors.forEach((s) => map.set(s.id, s.defaultName));
+    fleet.forEach((s) => map.set(s.id, s.name));
     return map;
-  }, []);
+  }, [fleet]);
 
   const assignedCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -300,11 +319,11 @@ export default function DeviceAccessScreen() {
 
           <SectionLabel>Fleet Roster</SectionLabel>
           <View style={{ gap: 16 }}>
-            {mockSensors.map((s) => (
+            {fleet.map((s) => (
               <ModuleRow
                 key={s.id}
                 id={s.id}
-                name={s.defaultName}
+                name={s.name}
                 location={s.location}
                 assignedCount={assignedCounts.get(s.id) ?? 0}
                 busy={busyModuleId === s.id}
