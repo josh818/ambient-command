@@ -331,11 +331,11 @@ function DataPointsSection({ sensor }: { sensor: Sensor }) {
                     : 'No pressure signal'
               }
               sub={
-                d.pressure.switchOn === null
+                d.pressure.switchOpen === null
                   ? 'Switch state unknown'
-                  : d.pressure.switchOn
-                    ? 'Pressure switch active'
-                    : 'Pressure switch idle'
+                  : d.pressure.switchOpen
+                    ? 'Switch: open'
+                    : 'Switch: closed'
               }
             />
             {/* 5 — Conductivity (hardware doesn't report it) */}
