@@ -16,8 +16,6 @@ import { rangeMeta, type TimeRange } from '../src/lib/history';
 import { useUsageAnalytics, useMonthToDateUsage } from '../src/lib/usageHistory';
 import { UsageBarChart } from '../src/components/UsageBarChart';
 import { useNotificationPrefs } from '../src/lib/notificationPrefs';
-import { useSubscription } from '../src/lib/subscription';
-import { PremiumBadge } from '../src/components/PremiumGate';
 import { NoDevicesAssigned } from '../src/components/NoDevicesAssigned';
 
 // Water Usage Analytics — Flo-style usage tracking + conservation goals.
@@ -102,7 +100,6 @@ export default function UsageScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { sensors, ready, noDevicesAssigned, access } = useSensors();
-  const { isPremium } = useSubscription();
   const { usageGoal, save } = useNotificationPrefs();
 
   const [range, setRange] = useState<TimeRange>('24h');
@@ -188,56 +185,29 @@ export default function UsageScreen() {
           >
             {RANGES.map((r) => {
               const active = r === range;
-              const locked = !isPremium && r !== '24h';
               return (
                 <Pressable
                   key={r}
                   onPress={() => {
-                    if (locked) {
-                      router.push('/settings/subscription');
-                    } else {
-                      setRange(r);
-                      setSelectedBar(null);
-                    }
+                    setRange(r);
+                    setSelectedBar(null);
                   }}
                   className="flex-1 py-2 rounded-lg items-center active:opacity-80 flex-row justify-center"
                   style={{ backgroundColor: active ? colors.primary : 'transparent' }}
                 >
                   <Text
                     style={{
-                      color: active ? colors.bg : locked ? colors.textFaint : colors.textMuted,
+                      color: active ? colors.bg : colors.textMuted,
                       fontSize: 13,
                       fontWeight: '700',
                     }}
                   >
                     {rangeMeta[r].label}
                   </Text>
-                  {locked && (
-                    <Ionicons name="lock-closed" size={11} color={colors.textFaint} style={{ marginLeft: 4 }} />
-                  )}
                 </Pressable>
               );
             })}
           </View>
-
-          {!isPremium && (
-            <Pressable
-              onPress={() => router.push('/settings/subscription')}
-              className="flex-row items-center rounded-xl p-3 active:opacity-80"
-              style={{
-                backgroundColor: 'rgba(45,212,191,0.10)',
-                borderWidth: 1,
-                borderColor: colors.primary + '40',
-                marginTop: 14,
-              }}
-            >
-              <Ionicons name="lock-closed" size={15} color={colors.primary} />
-              <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 8, flex: 1, lineHeight: 17 }}>
-                Free plan shows the last 24 hours. Upgrade for 7-day and 30-day usage analytics.
-              </Text>
-              <PremiumBadge />
-            </Pressable>
-          )}
 
           {/* Scope chips: fleet + each assigned sensor */}
           <ScrollView
