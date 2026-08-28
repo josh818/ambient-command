@@ -104,7 +104,7 @@ export default function AccountScreen() {
           <Pressable
             onPress={() => router.push('/settings/subscription')}
             className="rounded-2xl p-5 mt-4 active:opacity-90"
-            style={{ backgroundColor: 'rgba(45,212,191,0.10)', borderWidth: 1, borderColor: colors.primary + '55' }}
+            style={{ backgroundColor: 'rgba(126,226,190,0.10)', borderWidth: 1, borderColor: colors.primary + '55' }}
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
@@ -123,7 +123,7 @@ export default function AccountScreen() {
         ) : (
           <View
             className="rounded-2xl p-5 mt-4 flex-row items-center"
-            style={{ backgroundColor: 'rgba(45,212,191,0.10)', borderWidth: 1, borderColor: colors.primary + '55' }}
+            style={{ backgroundColor: 'rgba(126,226,190,0.10)', borderWidth: 1, borderColor: colors.primary + '55' }}
           >
             <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
             <View className="ml-3 flex-1">

@@ -87,7 +87,7 @@ export default function ConsoleScreen() {
           <View className="flex-row items-center">
             <View
               className="w-9 h-9 rounded-lg items-center justify-center"
-              style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+              style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
             >
               <Ionicons name="terminal" size={20} color={colors.primary} />
             </View>

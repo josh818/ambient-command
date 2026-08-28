@@ -77,9 +77,9 @@ function AwaitingTelemetry({ detail }: { detail: string }) {
           width: 76,
           height: 76,
           borderRadius: 38,
-          backgroundColor: 'rgba(45,212,191,0.10)',
+          backgroundColor: 'rgba(126,226,190,0.10)',
           borderWidth: 1,
-          borderColor: 'rgba(45,212,191,0.30)',
+          borderColor: 'rgba(126,226,190,0.30)',
         }}
       >
         <Ionicons name="water-outline" size={36} color={colors.primary} />
@@ -229,7 +229,7 @@ export default function UsageScreen() {
                   }}
                   className="px-4 py-2 rounded-full active:opacity-80"
                   style={{
-                    backgroundColor: active ? 'rgba(45,212,191,0.15)' : colors.surface,
+                    backgroundColor: active ? 'rgba(126,226,190,0.15)' : colors.surface,
                     borderWidth: 1,
                     borderColor: active ? colors.primary : colors.border,
                   }}
@@ -299,7 +299,7 @@ export default function UsageScreen() {
                       <View
                         className="flex-row items-center px-3 py-1.5 rounded-full"
                         style={{
-                          backgroundColor: up ? 'rgba(251,191,36,0.12)' : 'rgba(52,211,153,0.12)',
+                          backgroundColor: up ? 'rgba(254,190,100,0.12)' : 'rgba(126,226,190,0.12)',
                         }}
                       >
                         <Ionicons
@@ -447,7 +447,7 @@ export default function UsageScreen() {
             <View className="flex-row items-center">
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
-                style={{ backgroundColor: 'rgba(45,212,191,0.12)' }}
+                style={{ backgroundColor: 'rgba(126,226,190,0.12)' }}
               >
                 <Ionicons name="leaf" size={20} color={colors.primary} />
               </View>
@@ -465,10 +465,10 @@ export default function UsageScreen() {
                   style={{
                     backgroundColor:
                       goalFraction >= 1
-                        ? 'rgba(248,113,113,0.12)'
+                        ? 'rgba(224,114,89,0.12)'
                         : overPace
-                          ? 'rgba(251,191,36,0.12)'
-                          : 'rgba(52,211,153,0.12)',
+                          ? 'rgba(254,190,100,0.12)'
+                          : 'rgba(126,226,190,0.12)',
                   }}
                 >
                   <Text
@@ -555,7 +555,7 @@ export default function UsageScreen() {
                 disabled={savingGoal}
                 className="rounded-xl items-center flex-row justify-center active:opacity-80"
                 style={{
-                  backgroundColor: 'rgba(45,212,191,0.12)',
+                  backgroundColor: 'rgba(126,226,190,0.12)',
                   borderWidth: 1,
                   borderColor: colors.primary + '55',
                   paddingVertical: 12,

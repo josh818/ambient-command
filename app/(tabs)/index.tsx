@@ -121,7 +121,7 @@ export default function DashboardScreen() {
           </View>
           <View
             className="flex-row items-center px-3 py-1.5 rounded-full"
-            style={{ backgroundColor: 'rgba(52,211,153,0.12)' }}
+            style={{ backgroundColor: 'rgba(126,226,190,0.12)' }}
           >
             <View
               className="w-2 h-2 rounded-full mr-1.5"
@@ -155,7 +155,7 @@ export default function DashboardScreen() {
           >
             <View
               className="w-9 h-9 rounded-xl items-center justify-center mb-2.5"
-              style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+              style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
             >
               <Ionicons name="bar-chart" size={18} color={colors.primary} />
             </View>
@@ -186,7 +186,7 @@ export default function DashboardScreen() {
           <Pressable
             onPress={() => router.push('/settings/subscription')}
             className="mt-6 rounded-2xl p-4 flex-row items-center active:opacity-90"
-            style={{ backgroundColor: 'rgba(45,212,191,0.10)', borderWidth: 1, borderColor: colors.primary + '40' }}
+            style={{ backgroundColor: 'rgba(126,226,190,0.10)', borderWidth: 1, borderColor: colors.primary + '40' }}
           >
             <Ionicons name="notifications-off" size={20} color={colors.primary} />
             <View className="flex-1 ml-3">
@@ -210,7 +210,7 @@ export default function DashboardScreen() {
               </Text>
               <View
                 className="ml-2 px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: 'rgba(248,113,113,0.15)' }}
+                style={{ backgroundColor: 'rgba(224,114,89,0.15)' }}
               >
                 <Text style={{ color: colors.danger, fontSize: 11, fontWeight: '700' }}>
                   {counts.total}
@@ -237,7 +237,7 @@ export default function DashboardScreen() {
         >
           <View
             className="w-10 h-10 rounded-xl items-center justify-center"
-            style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+            style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
           >
             <Ionicons name="terminal" size={20} color={colors.primary} />
           </View>

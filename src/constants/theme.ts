@@ -1,25 +1,27 @@
-// Ambient Command — Design System
-// A technical, premium dark-first theme for sensor monitoring & control.
+// Ambient Command / Seekaleak — Design System
+// Dark-first theme using the Seekaleak brand palette:
+//   7EE2BE mint · DCF8EE light mint · A1C1B3 sage · 111147 deep indigo
+//   503A9C purple · FEBE64 amber · E07259 coral · FFFFFF white
 
 export const colors = {
   // Brand
-  primary: '#2DD4BF', // teal — "live / connected"
-  primaryDark: '#14B8A6',
-  accent: '#818CF8', // indigo accent
+  primary: '#7EE2BE', // Seekaleak mint — "live / connected"
+  primaryDark: '#57C6A0', // darker mint for pressed/track states
+  accent: '#503A9C', // Seekaleak purple accent
   // Status
-  online: '#34D399',
-  offline: '#9CA3AF',
-  warning: '#FBBF24',
-  danger: '#F87171',
-  // Surfaces (dark)
-  bg: '#0B1120',
-  surface: '#111827',
-  surfaceAlt: '#1F2937',
-  border: '#243042',
+  online: '#7EE2BE', // mint = healthy / valve open
+  offline: '#A1C1B3', // sage
+  warning: '#FEBE64', // amber
+  danger: '#E07259', // coral
+  // Surfaces (dark) — built around the brand's deep indigo 111147
+  bg: '#0B0B2E', // slightly darker than surface so cards lift off the page
+  surface: '#111147', // brand deep indigo
+  surfaceAlt: '#1B1B5A', // one step lighter for tiles/insets
+  border: '#2A2A66', // indigo-tinted hairline
   // Text
-  text: '#F8FAFC',
-  textMuted: '#94A3B8',
-  textFaint: '#64748B',
+  text: '#F4FBF7', // near-white with a faint mint tint
+  textMuted: '#A1C1B3', // sage
+  textFaint: '#7C86AE', // muted indigo-grey
 } as const;
 
 export const spacing = {
@@ -55,8 +57,8 @@ export const statusMeta: Record<
   SensorStatus,
   { label: string; color: string; bg: string }
 > = {
-  online: { label: 'Online', color: colors.online, bg: 'rgba(52,211,153,0.12)' },
-  offline: { label: 'Offline', color: colors.offline, bg: 'rgba(156,163,175,0.12)' },
-  warning: { label: 'Warning', color: colors.warning, bg: 'rgba(251,191,36,0.12)' },
-  unknown: { label: 'No Data', color: colors.textFaint, bg: 'rgba(100,116,139,0.12)' },
+  online: { label: 'Online', color: colors.online, bg: 'rgba(126,226,190,0.14)' },
+  offline: { label: 'Offline', color: colors.offline, bg: 'rgba(161,193,179,0.12)' },
+  warning: { label: 'Warning', color: colors.warning, bg: 'rgba(254,190,100,0.14)' },
+  unknown: { label: 'No Data', color: colors.textFaint, bg: 'rgba(124,134,174,0.14)' },
 };

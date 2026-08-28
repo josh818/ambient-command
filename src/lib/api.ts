@@ -35,6 +35,41 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 /**
+ * Issue a command to a module (valve control, vacation/sabbath modes).
+ * Server endpoint: IssueCommand?module_id=<id>&command=<CMD>
+ *
+ * The command string uses a COMMA as a delimiter the firmware parses on:
+ *   VALVE,OPEN | VALVE,CLOSE | VACATION,<days> | SABBATH,<hours>
+ * We encodeURIComponent the whole command so the comma survives transit
+ * (%2C) and the server decodes it back before parsing. Goes through the same
+ * /bh/ proxy as every other call.
+ *
+ * NOTE: hardware modules sleep between check-ins, so a command is QUEUED on
+ * the server and applied when the module next wakes — it is not instant.
+ */
+export async function issueCommand(moduleId: string, command: string): Promise<void> {
+  const qs =
+    `module_id=${encodeURIComponent(moduleId)}` +
+    `&command=${encodeURIComponent(command)}`;
+  await getJson<unknown>(`/IssueCommand?${qs}`);
+}
+
+export interface ModuleCommand {
+  rec_id?: number;
+  module_id?: string;
+  rec_date_time?: string;
+  command?: string;
+}
+
+/** Command history/queue for a module — used to confirm a command was recorded. */
+export async function getModuleCommands(moduleId: string): Promise<ModuleCommand[]> {
+  const data = await getJson<unknown>(
+    `/GetModuleCommands?module_id=${encodeURIComponent(moduleId)}`,
+  );
+  return toRecordArray(data) as ModuleCommand[];
+}
+
+/**
  * Connectivity check. The server used to expose a trivial Sum endpoint for
  * this, but a server update removed it (it now returns "Unknown path"),
  * which made the app think the whole API was down. GetRawDataCount is the

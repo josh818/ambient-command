@@ -71,7 +71,7 @@ export default function AnalyticsScreen() {
         <View
           className="rounded-3xl p-5"
           style={{
-            backgroundColor: 'rgba(45,212,191,0.10)',
+            backgroundColor: 'rgba(126,226,190,0.10)',
             borderWidth: 1,
             borderColor: colors.primary + '55',
           }}
@@ -162,7 +162,7 @@ export default function AnalyticsScreen() {
                   {f.isPremium && (
                     <View
                       className="ml-2 px-1.5 rounded-full"
-                      style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+                      style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
                     >
                       <Text style={{ color: colors.primary, fontSize: 9, fontWeight: '800' }}>PRO</Text>
                     </View>

@@ -59,7 +59,7 @@ export const SCENE_PRESETS: ScenePreset[] = [
   {
     name: 'Custom',
     icon: 'construct',
-    color: '#2DD4BF',
+    color: '#7EE2BE',
     description: 'Build a scene from scratch',
     valveOpen: false,
   },

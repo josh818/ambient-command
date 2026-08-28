@@ -330,9 +330,9 @@ export default function SensorHistory() {
               <View
                 className="flex-row items-start rounded-xl p-3 mb-4"
                 style={{
-                  backgroundColor: 'rgba(251,191,36,0.10)',
+                  backgroundColor: 'rgba(254,190,100,0.10)',
                   borderWidth: 1,
-                  borderColor: 'rgba(251,191,36,0.35)',
+                  borderColor: 'rgba(254,190,100,0.35)',
                 }}
               >
                 <Ionicons name="information-circle-outline" size={15} color={colors.warning} style={{ marginTop: 1 }} />

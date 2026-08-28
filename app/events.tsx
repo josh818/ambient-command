@@ -39,8 +39,8 @@ interface TimelineEvent {
 type Filter = 'all' | 'alerts' | 'actions';
 
 const levelColor: Record<string, { color: string; bg: string }> = {
-  danger: { color: colors.danger, bg: 'rgba(248,113,113,0.12)' },
-  warning: { color: colors.warning, bg: 'rgba(251,191,36,0.12)' },
+  danger: { color: colors.danger, bg: 'rgba(224,114,89,0.12)' },
+  warning: { color: colors.warning, bg: 'rgba(254,190,100,0.12)' },
   info: { color: colors.accent, bg: 'rgba(129,140,248,0.12)' },
 };
 
@@ -181,7 +181,7 @@ export default function EventsScreen() {
         kind: 'action',
         icon: 'terminal',
         color: c.success ? colors.primary : colors.danger,
-        bg: c.success ? 'rgba(45,212,191,0.12)' : 'rgba(248,113,113,0.12)',
+        bg: c.success ? 'rgba(126,226,190,0.12)' : 'rgba(224,114,89,0.12)',
         title: c.command,
         subtitle: `Console command · ${c.success ? 'succeeded' : 'failed'}`,
       });
@@ -261,7 +261,7 @@ export default function EventsScreen() {
               onPress={() => setFilter(f.key)}
               className="flex-row items-center px-4 py-2 rounded-full active:opacity-80"
               style={{
-                backgroundColor: active ? 'rgba(45,212,191,0.15)' : colors.surface,
+                backgroundColor: active ? 'rgba(126,226,190,0.15)' : colors.surface,
                 borderWidth: 1,
                 borderColor: active ? colors.primary : colors.border,
               }}

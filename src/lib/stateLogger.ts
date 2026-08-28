@@ -88,7 +88,7 @@ export function buildSnapshot(input: StateLoggerInputs): AppStateSnapshot {
 export function logSnapshot(snapshot: AppStateSnapshot): void {
   // Grouped, readable console output for debugging in Metro / Expo logs.
   /* eslint-disable no-console */
-  console.log('%c[AMBIENT STATE]', 'color:#2DD4BF;font-weight:bold', snapshot.capturedAt);
+  console.log('%c[AMBIENT STATE]', 'color:#7EE2BE;font-weight:bold', snapshot.capturedAt);
   console.log('  session  →', snapshot.session);
   console.log('  api      →', snapshot.api);
   console.log('  sensors  →', snapshot.sensors);

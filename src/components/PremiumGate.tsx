@@ -12,7 +12,7 @@ export function PremiumBadge({ size = 'sm' }: { size?: 'sm' | 'md' }) {
     <View
       className="flex-row items-center self-start rounded-full"
       style={{
-        backgroundColor: 'rgba(45,212,191,0.15)',
+        backgroundColor: 'rgba(126,226,190,0.15)',
         paddingHorizontal: small ? 8 : 10,
         paddingVertical: small ? 2 : 4,
       }}
@@ -61,7 +61,7 @@ export function PremiumGate({ title, description, icon = 'lock-closed', feature 
     >
       <View
         className="w-12 h-12 rounded-full items-center justify-center mb-3"
-        style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+        style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
       >
         <Ionicons name={icon as any} size={24} color={colors.primary} />
       </View>

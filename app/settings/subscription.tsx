@@ -90,7 +90,7 @@ export default function SubscriptionScreen() {
           {redeemed && (
             <View
               className="rounded-2xl p-4 mb-4 flex-row items-center"
-              style={{ backgroundColor: 'rgba(52,211,153,0.12)', borderWidth: 1, borderColor: colors.online + '55' }}
+              style={{ backgroundColor: 'rgba(126,226,190,0.12)', borderWidth: 1, borderColor: colors.online + '55' }}
             >
               <Ionicons name="checkmark-circle" size={22} color={colors.online} />
               <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginLeft: 10, flex: 1 }}>
@@ -109,7 +109,7 @@ export default function SubscriptionScreen() {
           >
             <View
               className="self-start px-3 py-1 rounded-full mb-3"
-              style={{ backgroundColor: 'rgba(45,212,191,0.15)' }}
+              style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
             >
               <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>
                 PREMIUM

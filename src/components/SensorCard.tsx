@@ -183,7 +183,7 @@ export function SensorCard({ sensor }: { sensor: Sensor }) {
           {sensor.controllable && sensor.hasTelemetry && (
             <View
               className="ml-3 px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: sensor.isOn ? 'rgba(45,212,191,0.15)' : 'rgba(248,113,113,0.15)' }}
+              style={{ backgroundColor: sensor.isOn ? 'rgba(126,226,190,0.15)' : 'rgba(224,114,89,0.15)' }}
             >
               <Text
                 style={{

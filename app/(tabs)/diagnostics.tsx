@@ -311,7 +311,7 @@ export default function DiagnosticsScreen() {
                   width: 64,
                   height: 64,
                   borderRadius: 32,
-                  backgroundColor: 'rgba(45,212,191,0.10)',
+                  backgroundColor: 'rgba(126,226,190,0.10)',
                 }}
               >
                 <Ionicons name="pulse" size={30} color={colors.primary} />

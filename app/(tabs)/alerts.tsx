@@ -24,8 +24,8 @@ const levelMeta: Record<
   Level,
   { color: string; bg: string; label: string; icon: string }
 > = {
-  danger: { color: colors.danger, bg: 'rgba(248,113,113,0.12)', label: 'Critical', icon: 'warning' },
-  warning: { color: colors.warning, bg: 'rgba(251,191,36,0.12)', label: 'Warning', icon: 'alert-circle' },
+  danger: { color: colors.danger, bg: 'rgba(224,114,89,0.12)', label: 'Critical', icon: 'warning' },
+  warning: { color: colors.warning, bg: 'rgba(254,190,100,0.12)', label: 'Warning', icon: 'alert-circle' },
   info: { color: colors.accent, bg: 'rgba(129,140,248,0.12)', label: 'Info', icon: 'information-circle' },
 };
 
@@ -222,7 +222,7 @@ export default function AlertsScreen() {
         <View
           className="rounded-2xl p-4 mt-4 flex-row items-center"
           style={{
-            backgroundColor: critical.length > 0 ? 'rgba(248,113,113,0.10)' : colors.surface,
+            backgroundColor: critical.length > 0 ? 'rgba(224,114,89,0.10)' : colors.surface,
             borderWidth: 1,
             borderColor: critical.length > 0 ? colors.danger + '40' : colors.border,
           }}
@@ -232,10 +232,10 @@ export default function AlertsScreen() {
             style={{
               backgroundColor:
                 critical.length > 0
-                  ? 'rgba(248,113,113,0.18)'
+                  ? 'rgba(224,114,89,0.18)'
                   : active.length > 0
-                    ? 'rgba(251,191,36,0.18)'
-                    : 'rgba(52,211,153,0.18)',
+                    ? 'rgba(254,190,100,0.18)'
+                    : 'rgba(126,226,190,0.18)',
             }}
           >
             <Ionicons
@@ -320,9 +320,9 @@ export default function AlertsScreen() {
                 width: 88,
                 height: 88,
                 borderRadius: 44,
-                backgroundColor: 'rgba(52,211,153,0.10)',
+                backgroundColor: 'rgba(126,226,190,0.10)',
                 borderWidth: 1,
-                borderColor: 'rgba(52,211,153,0.35)',
+                borderColor: 'rgba(126,226,190,0.35)',
               }}
             >
               <Ionicons name="shield-checkmark" size={44} color={colors.online} />

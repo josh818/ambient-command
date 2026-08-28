@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   Pressable,
-  Switch,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -23,6 +22,7 @@ import {
 } from '../../src/lib/mockData';
 import { StatusPill } from '../../src/components/StatusPill';
 import { LiveModuleData } from '../../src/components/LiveModuleData';
+import { ValveControl } from '../../src/components/ValveControl';
 import { useDaySeries } from '../../src/lib/sparkHistory';
 import {
   useMeasurementData,
@@ -236,7 +236,7 @@ function DataPointsSection({ sensor }: { sensor: Sensor }) {
                 onPress={() => setWin(k)}
                 className="rounded-full px-3 py-1 active:opacity-70"
                 style={{
-                  backgroundColor: active ? 'rgba(45,212,191,0.15)' : colors.surfaceAlt,
+                  backgroundColor: active ? 'rgba(126,226,190,0.15)' : colors.surfaceAlt,
                   borderWidth: 1,
                   borderColor: active ? colors.primary : colors.border,
                 }}
@@ -369,8 +369,8 @@ function DataPointsSection({ sensor }: { sensor: Sensor }) {
                 d.valveOpen === null
                   ? colors.surface
                   : d.valveOpen
-                    ? 'rgba(52,211,153,0.15)'
-                    : 'rgba(248,113,113,0.15)'
+                    ? 'rgba(126,226,190,0.15)'
+                    : 'rgba(224,114,89,0.15)'
               }
               sub={d.valveMode ? `Mode: ${d.valveMode}` : 'Valve state from telemetry'}
             />
@@ -425,9 +425,9 @@ function DataPointsSection({ sensor }: { sensor: Sensor }) {
             <View
               className="rounded-xl p-4 flex-row items-center"
               style={{
-                backgroundColor: 'rgba(248,113,113,0.10)',
+                backgroundColor: 'rgba(224,114,89,0.10)',
                 borderWidth: 1,
-                borderColor: 'rgba(248,113,113,0.4)',
+                borderColor: 'rgba(224,114,89,0.4)',
                 marginTop: 16,
               }}
             >
@@ -472,12 +472,13 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 export default function SensorDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { sensor, renameSensor, toggleSensor } = useSensor(id);
+  const { sensor, renameSensor } = useSensor(id);
   const daySeries = useDaySeries(id);
+  // Live valve state for the control (24h window; cache makes this cheap).
+  const { derived: valveDerived } = useMeasurementData(id, 24 * 60 * 60 * 1000);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
-  const [toggling, setToggling] = useState(false);
 
   if (!sensor) {
     return (
@@ -503,15 +504,6 @@ export default function SensorDetail() {
       }
     }
     setEditing(false);
-  };
-
-  const handleToggle = async (v: boolean) => {
-    setToggling(true);
-    try {
-      await toggleSensor(sensor.id, v);
-    } finally {
-      setToggling(false);
-    }
   };
 
   return (
@@ -620,42 +612,12 @@ export default function SensorDetail() {
           <LiveModuleData moduleId={sensor.id} />
 
           {sensor.controllable && (
-            <View
-              className="rounded-2xl p-5 mt-4"
-              style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1 pr-3">
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: '700' }}>
-                    Water Shut-off Valve
-                  </Text>
-                  <Text style={{ color: colors.textFaint, fontSize: 12, marginTop: 2 }}>
-                    {sensor.isOn ? 'Set to open in this app.' : 'Set to closed in this app.'}
-                  </Text>
-                </View>
-                {toggling ? (
-                  <ActivityIndicator size="small" color={colors.primary} style={{ width: 51 }} />
-                ) : (
-                  <Switch
-                    value={sensor.isOn}
-                    onValueChange={(v) => void handleToggle(v)}
-                    trackColor={{ false: colors.surfaceAlt, true: colors.primaryDark }}
-                    thumbColor={sensor.isOn ? colors.primary : colors.textFaint}
-                    disabled={sensor.status === 'offline'}
-                  />
-                )}
-              </View>
-              <View
-                className="flex-row items-start mt-3 pt-3"
-                style={{ borderTopWidth: 1, borderTopColor: colors.border }}
-              >
-                <Ionicons name="information-circle-outline" size={15} color={colors.textFaint} style={{ marginTop: 1 }} />
-                <Text style={{ color: colors.textFaint, fontSize: 11, marginLeft: 6, flex: 1, lineHeight: 15 }}>
-                  Not wired to the physical valve yet — this switch only saves a setting in the app. It does not
-                  open or close the actual valve.
-                </Text>
-              </View>
-            </View>
+            <ValveControl
+              moduleId={sensor.id}
+              deviceName={sensor.defaultName}
+              valveOpen={valveDerived?.valveOpen ?? null}
+              offline={sensor.status === 'offline'}
+            />
           )}
 
           {/* 24h stat tiles from real server measurements */}
@@ -694,7 +656,7 @@ export default function SensorDetail() {
             <View className="flex-row items-center">
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
-                style={{ backgroundColor: 'rgba(45,212,191,0.12)' }}
+                style={{ backgroundColor: 'rgba(126,226,190,0.12)' }}
               >
                 <Ionicons name="stats-chart" size={20} color={colors.primary} />
               </View>

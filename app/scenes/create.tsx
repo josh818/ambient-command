@@ -8,7 +8,7 @@ import { useSensors } from '../../src/lib/sensorStore';
 import { useScenes, SCENE_PRESETS, type SceneAction } from '../../src/lib/sceneStore';
 
 const ICON_CHOICES = ['airplane', 'moon', 'home', 'construct', 'shield-checkmark', 'water', 'flash', 'leaf'];
-const COLOR_CHOICES = ['#818CF8', '#60A5FA', '#34D399', '#2DD4BF', '#FBBF24', '#F87171'];
+const COLOR_CHOICES = ['#818CF8', '#60A5FA', '#34D399', '#7EE2BE', '#FBBF24', '#F87171'];
 
 export default function CreateSceneScreen() {
   const router = useRouter();
@@ -113,7 +113,7 @@ export default function CreateSceneScreen() {
               className="w-10 h-10 rounded-full items-center justify-center active:opacity-80"
               style={{ backgroundColor: c, borderWidth: 3, borderColor: color === c ? colors.text : 'transparent' }}
             >
-              {color === c && <Ionicons name="checkmark" size={18} color="#0B1120" />}
+              {color === c && <Ionicons name="checkmark" size={18} color="#0B0B2E" />}
             </Pressable>
           ))}
         </View>
@@ -155,7 +155,7 @@ export default function CreateSceneScreen() {
                     className="w-6 h-6 rounded-md items-center justify-center mr-3"
                     style={{ backgroundColor: included ? color : 'transparent', borderWidth: 2, borderColor: included ? color : colors.textFaint }}
                   >
-                    {included && <Ionicons name="checkmark" size={16} color="#0B1120" />}
+                    {included && <Ionicons name="checkmark" size={16} color="#0B0B2E" />}
                   </View>
                   <View className="flex-1">
                     <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>{s.defaultName}</Text>
@@ -169,14 +169,14 @@ export default function CreateSceneScreen() {
                   <Pressable
                     onPress={() => setTarget(s.id, true)}
                     className="flex-1 py-2.5 rounded-xl items-center active:opacity-80"
-                    style={{ backgroundColor: target ? 'rgba(52,211,153,0.15)' : colors.surfaceAlt, borderWidth: 1, borderColor: target ? colors.online : colors.border }}
+                    style={{ backgroundColor: target ? 'rgba(126,226,190,0.15)' : colors.surfaceAlt, borderWidth: 1, borderColor: target ? colors.online : colors.border }}
                   >
                     <Text style={{ color: target ? colors.online : colors.textMuted, fontSize: 13, fontWeight: '700' }}>Valve Open</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setTarget(s.id, false)}
                     className="flex-1 py-2.5 rounded-xl items-center active:opacity-80"
-                    style={{ backgroundColor: !target ? 'rgba(248,113,113,0.15)' : colors.surfaceAlt, borderWidth: 1, borderColor: !target ? colors.danger : colors.border }}
+                    style={{ backgroundColor: !target ? 'rgba(224,114,89,0.15)' : colors.surfaceAlt, borderWidth: 1, borderColor: !target ? colors.danger : colors.border }}
                   >
                     <Text style={{ color: !target ? colors.danger : colors.textMuted, fontSize: 13, fontWeight: '700' }}>Valve Shut</Text>
                   </Pressable>
@@ -195,9 +195,9 @@ export default function CreateSceneScreen() {
           style={{ backgroundColor: canSave ? colors.primary : colors.surfaceAlt }}
         >
           {saving ? (
-            <ActivityIndicator color="#0B1120" />
+            <ActivityIndicator color="#0B0B2E" />
           ) : (
-            <Text style={{ color: canSave ? '#0B1120' : colors.textFaint, fontSize: 16, fontWeight: '800' }}>
+            <Text style={{ color: canSave ? '#0B0B2E' : colors.textFaint, fontSize: 16, fontWeight: '800' }}>
               {editing ? 'Save Changes' : 'Create Scene'}{actions.length > 0 ? ` (${actions.length})` : ''}
             </Text>
           )}

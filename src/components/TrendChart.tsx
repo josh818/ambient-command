@@ -11,16 +11,15 @@ import type { TrendPoint } from '../lib/measurementData';
 // - optional shaded background bands (e.g. "pressure switch closed" spans)
 // - optional step interpolation for state signals (valve open/closed)
 //
-// Series colors are validated for the app's dark surface (#111827) with the
-// dataviz palette validator — see TREND_COLORS below.
+// Series colors chosen to stay maximally distinguishable AND legible on the
+// Seekaleak deep-indigo surface (#111147), leaning on the brand palette.
 
-/** Dark-surface-validated series colors (validate_palette.js, all PASS). */
 export const TREND_COLORS = {
-  blue: '#3987E5', // slot 1 — pressure, battery volts/amps, valve state
-  orange: '#D95926', // slot 2 — charge volts/amps
-  aqua: '#199E70', // flow
-  yellow: '#C98500', // temperature
-  red: '#E66767', // leak events
+  blue: '#6FC7F0', // slot 1 — pressure, battery volts/amps, valve state (sky, pops on indigo)
+  orange: '#FEBE64', // slot 2 — charge volts/amps (brand amber)
+  aqua: '#7EE2BE', // flow (brand mint)
+  yellow: '#B7A9F0', // temperature (lifted brand purple, distinct from indigo bg)
+  red: '#E07259', // leak events (brand coral)
 } as const;
 
 export interface TrendChartSeries {

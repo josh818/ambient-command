@@ -49,7 +49,7 @@ function SceneTile({ scene, onTrigger }: { scene: Scene; onTrigger: (s: Scene) =
       >
         <View
           className="w-10 h-10 rounded-xl items-center justify-center mb-3"
-          style={{ backgroundColor: justRan ? 'rgba(52,211,153,0.18)' : accent + '22' }}
+          style={{ backgroundColor: justRan ? 'rgba(126,226,190,0.18)' : accent + '22' }}
         >
           {running ? (
             <ActivityIndicator size="small" color={accent} />

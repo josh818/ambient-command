@@ -17,7 +17,7 @@ export function WebAppFrame({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0B1120' }}>
+    <View style={{ flex: 1, backgroundColor: '#0B0B2E' }}>
       <View
         style={{
           flex: 1,

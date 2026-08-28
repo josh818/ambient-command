@@ -416,7 +416,7 @@ export default function DeviceAccessScreen() {
                         <Pressable
                           onPress={() => void handleUnassign(a)}
                           className="w-9 h-9 rounded-lg items-center justify-center active:opacity-70"
-                          style={{ backgroundColor: 'rgba(248,113,113,0.12)' }}
+                          style={{ backgroundColor: 'rgba(224,114,89,0.12)' }}
                         >
                           <Ionicons name="trash-outline" size={16} color={colors.danger} />
                         </Pressable>

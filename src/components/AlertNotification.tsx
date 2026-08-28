@@ -17,8 +17,8 @@ const levelMeta: Record<
   AlertLevel,
   { color: string; bg: string }
 > = {
-  danger: { color: colors.danger, bg: 'rgba(248,113,113,0.12)' },
-  warning: { color: colors.warning, bg: 'rgba(251,191,36,0.12)' },
+  danger: { color: colors.danger, bg: 'rgba(224,114,89,0.12)' },
+  warning: { color: colors.warning, bg: 'rgba(254,190,100,0.12)' },
   info: { color: colors.accent, bg: 'rgba(129,140,248,0.12)' },
 };
 

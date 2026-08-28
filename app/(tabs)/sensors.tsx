@@ -271,7 +271,7 @@ export default function SensorsScreen() {
           {lookup.phase === 'error' && (
             <View
               className="flex-row items-center rounded-xl p-3 mt-3"
-              style={{ backgroundColor: 'rgba(248,113,113,0.10)', borderWidth: 1, borderColor: colors.danger + '55' }}
+              style={{ backgroundColor: 'rgba(224,114,89,0.10)', borderWidth: 1, borderColor: colors.danger + '55' }}
             >
               <Ionicons name="cloud-offline" size={15} color={colors.danger} />
               <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 8, flex: 1, lineHeight: 17 }}>

@@ -113,7 +113,7 @@ export default function AuthScreen() {
           <View className="items-center mb-8">
             <View
               className="w-16 h-16 rounded-2xl items-center justify-center mb-4"
-              style={{ backgroundColor: 'rgba(45,212,191,0.12)' }}
+              style={{ backgroundColor: 'rgba(126,226,190,0.12)' }}
             >
               <Ionicons name="pulse" size={32} color={colors.primary} />
             </View>
@@ -214,7 +214,7 @@ export default function AuthScreen() {
             onPress={handleTestAccount}
             disabled={loading}
             className="rounded-xl py-4 items-center mt-3 flex-row justify-center active:opacity-90"
-            style={{ backgroundColor: 'rgba(45,212,191,0.10)', borderWidth: 1, borderColor: colors.primary }}
+            style={{ backgroundColor: 'rgba(126,226,190,0.10)', borderWidth: 1, borderColor: colors.primary }}
           >
             <Ionicons name="flask-outline" size={18} color={colors.primary} />
             <Text style={{ color: colors.primary, fontSize: 15, fontWeight: '700', marginLeft: 8 }}>

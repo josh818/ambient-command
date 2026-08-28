@@ -92,7 +92,7 @@ export function LiveModuleData({ moduleId }: { moduleId: string }) {
           <View
             className="w-10 h-10 rounded-xl items-center justify-center"
             style={{
-              backgroundColor: error ? 'rgba(248,113,113,0.12)' : 'rgba(52,211,153,0.12)',
+              backgroundColor: error ? 'rgba(224,114,89,0.12)' : 'rgba(126,226,190,0.12)',
             }}
           >
             <Ionicons
@@ -133,7 +133,7 @@ export function LiveModuleData({ moduleId }: { moduleId: string }) {
       {error ? (
         <View
           className="rounded-xl p-3 mt-3"
-          style={{ backgroundColor: 'rgba(248,113,113,0.08)' }}
+          style={{ backgroundColor: 'rgba(224,114,89,0.08)' }}
         >
           <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '600' }}>{error}</Text>
           <Text style={{ color: colors.textFaint, fontSize: 11, marginTop: 4 }}>
