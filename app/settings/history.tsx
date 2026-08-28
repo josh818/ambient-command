@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useSession } from '../../lib/auth-client';
-import { colors } from '../../src/constants/theme';
+import { colors, fonts } from '../../src/constants/theme';
 import { formatRelativeTime } from '../../src/lib/mockData';
 
-const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
+const MONO = fonts.mono;
 
 type CommandDoc = {
   _id: string;

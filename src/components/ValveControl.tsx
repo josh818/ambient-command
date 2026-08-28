@@ -124,7 +124,18 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
         </View>
         <View
           className="px-2.5 py-1 rounded-full"
-          style={{ backgroundColor: `${stateColor}1F` }}
+          style={{
+            backgroundColor: `${stateColor}1F`,
+            // Soft mint glow when the valve is live/OPEN (positive state).
+            ...(valveOpen === true
+              ? {
+                  shadowColor: colors.primary,
+                  shadowOpacity: 0.4,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 0 },
+                }
+              : null),
+          }}
         >
           <Text style={{ color: stateColor, fontSize: 12, fontWeight: '800' }}>{stateLabel}</Text>
         </View>
@@ -195,6 +206,9 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
             onChange={setVacationDays}
             onApply={() => setPending({ kind: 'vacation', days: vacationDays })}
             disabled={offline || sending}
+            applyBg={`${colors.warning}1A`}
+            applyBorder={`${colors.warning}55`}
+            applyText={colors.warning}
           />
           <Stepper
             label="Sabbath (hours)"
@@ -204,6 +218,9 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
             onChange={setSabbathHours}
             onApply={() => setPending({ kind: 'sabbath', hours: sabbathHours })}
             disabled={offline || sending}
+            applyBg="rgba(80,58,156,0.14)"
+            applyBorder="rgba(80,58,156,0.55)"
+            applyText={colors.accent}
           />
         </View>
       )}
@@ -290,6 +307,9 @@ function Stepper({
   onChange,
   onApply,
   disabled,
+  applyBg,
+  applyBorder,
+  applyText,
 }: {
   label: string;
   value: number;
@@ -298,6 +318,10 @@ function Stepper({
   onChange: (v: number) => void;
   onApply: () => void;
   disabled: boolean;
+  /** Color of the "Start" chip — lets Vacation (amber) and Sabbath (purple) read as distinct modes. */
+  applyBg: string;
+  applyBorder: string;
+  applyText: string;
 }) {
   return (
     <View className="flex-row items-center" style={{ gap: 10 }}>
@@ -332,13 +356,13 @@ function Stepper({
           height: 40,
           paddingHorizontal: 16,
           borderRadius: 12,
-          backgroundColor: `${colors.warning}1A`,
+          backgroundColor: applyBg,
           borderWidth: 1,
-          borderColor: `${colors.warning}55`,
+          borderColor: applyBorder,
           opacity: disabled ? 0.5 : 1,
         }}
       >
-        <Text style={{ color: colors.warning, fontSize: 13, fontWeight: '800' }}>Start</Text>
+        <Text style={{ color: applyText, fontSize: 13, fontWeight: '800' }}>Start</Text>
       </Pressable>
     </View>
   );

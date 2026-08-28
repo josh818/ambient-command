@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { colors } from '../constants/theme';
+import { colors, fonts } from '../constants/theme';
 import {
   sensorTypeMeta,
   formatRelativeTime,
@@ -72,7 +72,7 @@ function DataStrip({ sensorId }: { sensorId: string }) {
             <Text style={{ color: colors.textFaint, fontSize: 11, marginHorizontal: 5 }}>·</Text>
           )}
           {i === 0 && <View style={{ width: 5 }} />}
-          <Text style={{ color: p.color ?? colors.textMuted, fontSize: 11, fontWeight: '600' }}>
+          <Text style={{ color: p.color ?? colors.textMuted, fontSize: 11, fontWeight: '600', fontFamily: fonts.mono }}>
             {p.text}
           </Text>
         </View>
@@ -173,11 +173,11 @@ export function SensorCard({ sensor }: { sensor: Sensor }) {
         <StatusPill status={sensor.status} />
         <View className="flex-row items-center">
           <Ionicons name={batt.name as any} size={15} color={batt.color} />
-          <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 4, marginRight: 12 }}>
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 4, marginRight: 12, fontFamily: fonts.mono }}>
             {sensor.batteryVolts !== undefined ? `${sensor.batteryVolts.toFixed(2)}V` : 'N/A'}
           </Text>
           <Ionicons name={sig.name as any} size={14} color={sig.color} />
-          <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 4 }}>
+          <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 4, fontFamily: fonts.mono }}>
             {sensor.systemVolts !== undefined ? `${sensor.systemVolts.toFixed(2)}V` : 'N/A'}
           </Text>
           {sensor.controllable && sensor.hasTelemetry && (

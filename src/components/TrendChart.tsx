@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 import Svg, { Path, Line, Rect, Circle } from 'react-native-svg';
-import { colors } from '../constants/theme';
+import { colors, fonts } from '../constants/theme';
 import type { TrendPoint } from '../lib/measurementData';
 
 // Multi-series engineering trend chart (inline SVG), per the dataviz specs:
@@ -232,6 +232,7 @@ export function TrendChart({
               textAlign: 'right',
               color: colors.textFaint,
               fontSize: 10,
+              fontFamily: fonts.mono,
               fontVariant: ['tabular-nums'],
             }}
           >
@@ -256,6 +257,7 @@ export function TrendChart({
               textAlign: 'center',
               color: colors.textFaint,
               fontSize: 10,
+              fontFamily: fonts.mono,
             }}
           >
             {tk.label}

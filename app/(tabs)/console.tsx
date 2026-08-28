@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useSession } from '../../lib/auth-client';
-import { colors } from '../../src/constants/theme';
+import { colors, fonts } from '../../src/constants/theme';
 import { useSensors } from '../../src/lib/sensorStore';
 import {
   runCommand,
@@ -22,7 +22,7 @@ import {
   COMMANDS,
 } from '../../src/lib/commandEngine';
 
-const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
+const MONO = fonts.mono;
 
 const lineColor: Record<LineKind, string> = {
   output: colors.text,

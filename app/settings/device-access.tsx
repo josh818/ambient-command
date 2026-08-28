@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
-import { colors } from '../../src/constants/theme';
+import { colors, fonts } from '../../src/constants/theme';
 import { api } from '../../convex/_generated/api';
 import { useDeviceAccess } from '../../src/lib/deviceAccess';
 import { mockSensors } from '../../src/lib/mockData';
@@ -96,7 +96,7 @@ function ModuleRow({
           <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>{name}</Text>
           <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 1 }}>{location}</Text>
           <Text
-            style={{ color: colors.textFaint, fontSize: 11, marginTop: 2, fontFamily: 'monospace' }}
+            style={{ color: colors.textFaint, fontSize: 11, marginTop: 2, fontFamily: fonts.mono }}
           >
             ID {id}
           </Text>
@@ -406,7 +406,7 @@ export default function DeviceAccessScreen() {
                             style={{
                               color: colors.textFaint,
                               fontSize: 11,
-                              fontFamily: 'monospace',
+                              fontFamily: fonts.mono,
                               marginTop: 1,
                             }}
                           >

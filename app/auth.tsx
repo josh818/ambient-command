@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
-import { colors } from '../src/constants/theme';
+import { colors, fonts } from '../src/constants/theme';
+import { AmbientBackground } from '../src/components/AmbientBackground';
 import {
   AUTH_CONFIG,
   signInWithEmail,
@@ -100,7 +101,8 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
+      <AmbientBackground />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -110,17 +112,53 @@ export default function AuthScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="items-center mb-8">
+          <View className="items-center" style={{ marginBottom: 40 }}>
+            {/* App mark — mint-tinted rounded square with a soft mint glow */}
             <View
-              className="w-16 h-16 rounded-2xl items-center justify-center mb-4"
-              style={{ backgroundColor: 'rgba(126,226,190,0.12)' }}
+              className="w-20 h-20 rounded-3xl items-center justify-center"
+              style={{
+                backgroundColor: 'rgba(126,226,190,0.12)',
+                borderWidth: 1,
+                borderColor: 'rgba(126,226,190,0.30)',
+                shadowColor: colors.primary,
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 0 },
+              }}
             >
-              <Ionicons name="pulse" size={32} color={colors.primary} />
+              <Ionicons name="pulse" size={38} color={colors.primary} />
             </View>
-            <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>
+
+            {/* Product name — Space Grotesk, large + light */}
+            <Text
+              style={{
+                color: colors.text,
+                fontSize: 32,
+                fontWeight: '300',
+                fontFamily: fonts.sans,
+                marginTop: 24,
+                textAlign: 'center',
+              }}
+            >
               Ambient Command
             </Text>
-            <Text style={{ color: colors.textFaint, fontSize: 14, marginTop: 6 }}>
+
+            {/* Tagline — Space Mono, small, uppercase, letter-spaced */}
+            <Text
+              style={{
+                color: colors.primary,
+                fontSize: 11,
+                fontFamily: fonts.mono,
+                letterSpacing: 2,
+                marginTop: 12,
+                textTransform: 'uppercase',
+                textAlign: 'center',
+              }}
+            >
+              Leak Detection · Valve Control
+            </Text>
+
+            <Text style={{ color: colors.textFaint, fontSize: 14, marginTop: 16, textAlign: 'center' }}>
               {mode === 'signin' ? 'Sign in to monitor your sensors' : 'Create your account'}
             </Text>
           </View>

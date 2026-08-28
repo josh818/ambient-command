@@ -24,6 +24,11 @@ export const colors = {
   textFaint: '#7C86AE', // muted indigo-grey
 } as const;
 
+// Brand typography — loaded on web via a Google Fonts <link> in app/+html.tsx.
+// A single 'Space Grotesk' family carries every weight; 'Space Mono' is the
+// technical/telemetry face.
+export const fonts = { sans: 'Space Grotesk', mono: 'Space Mono' } as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,

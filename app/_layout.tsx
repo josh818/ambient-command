@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Text as RNText, TextInput as RNTextInput } from 'react-native';
 // SafeAreaProvider import redirected to the Shipper preview shim below.
 import { ConvexReactClient } from 'convex/react';
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
@@ -9,6 +10,18 @@ import '../global.css';
 import { PreviewStatusBar } from "@/components/PreviewStatusBar";
 import { SafeAreaProvider } from "@/components/PreviewSafeAreaProvider"; // Shipper preview shim — real insets on web, pass-through on device
 import { WebAppFrame } from "../src/components/WebAppFrame";
+
+// Default every <Text>/<TextInput> to the brand sans (Space Grotesk). On web
+// the single family carries all weights via the Google Fonts <link>, so each
+// component's own inline fontWeight/fontSize still wins. No render gating.
+(RNText as any).defaultProps = {
+  ...((RNText as any).defaultProps ?? {}),
+  style: { fontFamily: 'Space Grotesk' },
+};
+(RNTextInput as any).defaultProps = {
+  ...((RNTextInput as any).defaultProps ?? {}),
+  style: { fontFamily: 'Space Grotesk' },
+};
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,

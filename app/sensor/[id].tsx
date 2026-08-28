@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { colors } from '../../src/constants/theme';
+import { colors, fonts } from '../../src/constants/theme';
 import { useSensor } from '../../src/lib/sensorStore';
 import {
   sensorTypeMeta,
@@ -50,7 +50,7 @@ function StatTile({
       </Text>
       <Text
         numberOfLines={1}
-        style={{ color: tint ?? colors.text, fontSize: 15, fontWeight: '800', marginTop: 3 }}
+        style={{ color: tint ?? colors.text, fontSize: 15, fontWeight: '800', marginTop: 3, fontFamily: fonts.mono }}
       >
         {value}
       </Text>
@@ -135,7 +135,7 @@ function DataPointTile({
           className="self-start rounded-full px-2.5 py-1"
           style={{ backgroundColor: pillBg, marginTop: 6 }}
         >
-          <Text style={{ color: valueColor ?? colors.text, fontSize: 12, fontWeight: '800' }}>
+          <Text style={{ color: valueColor ?? colors.text, fontSize: 12, fontWeight: '800', fontFamily: fonts.mono }}>
             {value}
           </Text>
         </View>
@@ -147,6 +147,7 @@ function DataPointTile({
             fontSize: 15,
             fontWeight: '800',
             marginTop: 6,
+            fontFamily: fonts.mono,
           }}
         >
           {value}
@@ -457,14 +458,18 @@ function DataPointsSection({ sensor }: { sensor: Sensor }) {
   );
 }
 
-function MetricRow({ label, value }: { label: string; value: string }) {
+function MetricRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <View
       className="flex-row items-center justify-between py-3"
       style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}
     >
       <Text style={{ color: colors.textMuted, fontSize: 14 }}>{label}</Text>
-      <Text style={{ color: colors.text, fontSize: 14, fontWeight: '700' }}>{value}</Text>
+      <Text
+        style={{ color: colors.text, fontSize: 14, fontWeight: '700', fontFamily: mono ? fonts.mono : undefined }}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -700,18 +705,21 @@ export default function SensorDetail() {
             className="rounded-2xl px-5 py-1 mt-4"
             style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
           >
-            <MetricRow label="Device ID" value={sensor.id} />
+            <MetricRow label="Device ID" value={sensor.id} mono />
             <MetricRow
               label="Battery volts"
               value={sensor.batteryVolts !== undefined ? `${sensor.batteryVolts.toFixed(2)}V` : 'N/A'}
+              mono
             />
             <MetricRow
               label="System volts"
               value={sensor.systemVolts !== undefined ? `${sensor.systemVolts.toFixed(2)}V` : 'N/A'}
+              mono
             />
             <MetricRow
               label="Last update"
               value={sensor.hasTelemetry ? formatRelativeTime(sensor.lastUpdate) : 'N/A'}
+              mono
             />
             <View className="flex-row items-center justify-between py-3">
               <Text style={{ color: colors.textMuted, fontSize: 14 }}>Shut-off valve</Text>

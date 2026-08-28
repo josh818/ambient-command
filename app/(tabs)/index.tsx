@@ -16,6 +16,7 @@ import { PremiumBadge } from '../../src/components/PremiumGate';
 import { HealthRing } from '../../src/components/HealthRing';
 import { computeSystemHealth } from '../../src/lib/health';
 import { NoDevicesAssigned } from '../../src/components/NoDevicesAssigned';
+import { AmbientBackground } from '../../src/components/AmbientBackground';
 
 function StatTile({
   icon,
@@ -59,7 +60,8 @@ export default function DashboardScreen() {
   // empty state instead of health/stats/sensor sections.
   if (noDevicesAssigned) {
     return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }} edges={['top']}>
+        <AmbientBackground />
         <ScrollView
           contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
@@ -107,7 +109,8 @@ export default function DashboardScreen() {
   const topAlerts = alerts.slice(0, 3);
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }} edges={['top']}>
+      <AmbientBackground />
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
@@ -121,7 +124,14 @@ export default function DashboardScreen() {
           </View>
           <View
             className="flex-row items-center px-3 py-1.5 rounded-full"
-            style={{ backgroundColor: 'rgba(126,226,190,0.12)' }}
+            style={{
+              backgroundColor: 'rgba(126,226,190,0.12)',
+              // Soft mint glow — live/positive state
+              shadowColor: colors.primary,
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 0 },
+            }}
           >
             <View
               className="w-2 h-2 rounded-full mr-1.5"

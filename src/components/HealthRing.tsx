@@ -47,6 +47,8 @@ export function HealthRing({
   });
 
   const standby = score === null;
+  // Soft mint glow only on the healthy/live state (all-clear, green band).
+  const healthy = !standby && problemCount === 0;
 
   return (
     <Pressable
@@ -60,6 +62,14 @@ export function HealthRing({
         borderColor: standby ? colors.border : color + '33',
         paddingVertical: 24,
         paddingHorizontal: 20,
+        ...(healthy
+          ? {
+              shadowColor: colors.primary,
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 0 },
+            }
+          : null),
       }}
     >
       <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>

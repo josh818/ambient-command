@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../src/constants/theme';
+import { colors, fonts } from '../../src/constants/theme';
 import { useSensors } from '../../src/lib/sensorStore';
 import { useLiveData } from '../../src/lib/useLiveData';
 import { SensorCard } from '../../src/components/SensorCard';
@@ -74,7 +74,7 @@ function LookupResultCard({ rec }: { rec: ModuleRecord }) {
         </Text>
       )}
       {moduleId && (
-        <Text style={{ color: colors.textFaint, fontSize: 11, fontFamily: 'monospace' }}>
+        <Text style={{ color: colors.textFaint, fontSize: 11, fontFamily: fonts.mono }}>
           ID {moduleId}
         </Text>
       )}
