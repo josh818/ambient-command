@@ -1,4 +1,5 @@
-# ambient-command
+
+<!-- deploy: seekaleak theme --># ambient-command
 
 This project was created with Shipper.
 
