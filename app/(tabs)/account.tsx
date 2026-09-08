@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { notifyError } from '../../src/lib/notify';
 import { colors } from '../../src/constants/theme';
 import { useSession, signOutUser } from '../../lib/auth-client';
 import { useSubscription } from '../../src/lib/subscription';
@@ -47,12 +49,25 @@ export default function AccountScreen() {
   const { isPremium } = useSubscription();
   const { isAdmin } = useDeviceAccess();
 
+  const [signingOut, setSigningOut] = useState(false);
   const user = session?.user;
   const planLabel = isPremium ? 'Premium plan · unlimited' : 'Free plan · 3 sensors';
 
   const handleSignOut = async () => {
-    await signOutUser();
-    router.replace('/auth');
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      const result = await signOutUser();
+      if (!result.success) {
+        notifyError('Could not sign out', result.error?.message);
+        return;
+      }
+      router.replace('/auth');
+    } catch {
+      notifyError('Could not sign out', 'Check your connection and try again.');
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   if (isPending) {
@@ -64,7 +79,7 @@ export default function AccountScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
@@ -155,6 +170,12 @@ export default function AccountScreen() {
             onPress={() => router.push('/settings/profile')}
           />
           <Row
+            icon="pulse-outline"
+            label="Diagnostics"
+            sub="Sensor connection and system details"
+            onPress={() => router.push('/(tabs)/diagnostics')}
+          />
+          <Row
             icon="time-outline"
             label="Command History"
             sub="Past actions & terminal usage"
@@ -194,13 +215,15 @@ export default function AccountScreen() {
         </View>
 
         <Pressable
+          accessibilityRole="button"
+          disabled={signingOut}
           onPress={handleSignOut}
           className="rounded-2xl mt-4 py-4 items-center flex-row justify-center active:opacity-80"
           style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
         >
           <Ionicons name="log-out-outline" size={18} color="#f87171" />
           <Text style={{ color: '#f87171', fontSize: 15, fontWeight: '600', marginLeft: 8 }}>
-            Sign Out
+            {signingOut ? 'Signing out…' : 'Sign Out'}
           </Text>
         </Pressable>
 

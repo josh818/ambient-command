@@ -151,7 +151,7 @@ export default function SensorsScreen() {
   // of the roster (and instead of the server lookup tools).
   if (noDevicesAssigned) {
     return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
         <View className="px-5 pt-2 pb-1">
           <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>Sensors</Text>
           <Text style={{ color: colors.textFaint, fontSize: 13, marginTop: 2 }}>
@@ -169,7 +169,7 @@ export default function SensorsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
       <View className="px-5 pt-2 pb-1">
         <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>Sensors</Text>
         <Text style={{ color: colors.textFaint, fontSize: 13, marginTop: 2 }}>

@@ -30,12 +30,7 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
 export default function RootLayout() {
   return (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <SafeAreaProvider
-        initialMetrics={{
-          insets: { top: 72, bottom: 34, left: 0, right: 0 },
-          frame: { x: 0, y: 0, width: 393, height: 852 },
-        }}
-      >
+      <SafeAreaProvider>
         <StatusBar style="light" />
         <ToastHost />
         <WebAppFrame>

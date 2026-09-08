@@ -84,7 +84,7 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
   const [sabbathHours, setSabbathHours] = useState(24);
 
   const confirmAndSend = async () => {
-    if (!pending) return;
+    if (!pending || sending) return;
     setSending(true);
     setResult(null);
     try {
@@ -243,7 +243,7 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
       )}
 
       {/* Confirmation modal */}
-      <Modal visible={!!pending} transparent animationType="fade" onRequestClose={() => setPending(null)}>
+      <Modal visible={!!pending} transparent animationType="fade" onRequestClose={() => { if (!sending) setPending(null); }}>
         <View
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
         >
@@ -331,9 +331,12 @@ function Stepper({
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
       >
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Decrease ${label}`}
+          disabled={disabled || value <= min}
           onPress={() => onChange(Math.max(min, value - 1))}
           className="items-center justify-center active:opacity-70"
-          style={{ width: 40, height: 40 }}
+          style={{ width: 44, height: 44 }}
         >
           <Ionicons name="remove" size={18} color={colors.primary} />
         </Pressable>
@@ -341,9 +344,12 @@ function Stepper({
           {value}
         </Text>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Increase ${label}`}
+          disabled={disabled || value >= max}
           onPress={() => onChange(Math.min(max, value + 1))}
           className="items-center justify-center active:opacity-70"
-          style={{ width: 40, height: 40 }}
+          style={{ width: 44, height: 44 }}
         >
           <Ionicons name="add" size={18} color={colors.primary} />
         </Pressable>

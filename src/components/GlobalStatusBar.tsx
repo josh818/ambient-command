@@ -11,9 +11,10 @@ import { useSensors } from '../lib/sensorStore';
 // alerts (warning/offline sensors). Tapping the API segment retries the
 // connectivity check.
 
-type Health = 'healthy' | 'degraded' | 'critical' | 'checking';
+type Health = 'healthy' | 'degraded' | 'critical' | 'checking' | 'standby';
 
 const healthMeta: Record<Health, { label: string; color: string; icon: string }> = {
+  standby: { label: 'Awaiting sensor readings', color: colors.textMuted, icon: 'time-outline' },
   healthy: { label: 'All Systems Operational', color: colors.online, icon: 'shield-checkmark' },
   degraded: { label: 'Degraded Performance', color: colors.warning, icon: 'warning' },
   critical: { label: 'Attention Required', color: colors.danger, icon: 'alert-circle' },
@@ -53,13 +54,14 @@ export function GlobalStatusBar() {
     const online = sensors.filter((s) => s.status === 'online').length;
     const warning = sensors.filter((s) => s.status === 'warning').length;
     const offline = sensors.filter((s) => s.status === 'offline').length;
-    return { online, warning, offline, total: sensors.length };
+    return { online, warning, offline, total: sensors.length, reporting: sensors.filter((s) => s.hasTelemetry).length };
   }, [sensors]);
 
   const health: Health = useMemo(() => {
     if (status === 'checking' || status === 'idle') return 'checking';
     if (status === 'offline' || counts.offline > 0) return 'critical';
     if (counts.warning > 0) return 'degraded';
+    if (counts.reporting === 0) return 'standby';
     return 'healthy';
   }, [status, counts]);
 
@@ -104,13 +106,16 @@ export function GlobalStatusBar() {
 
       {/* API connectivity chip (tap to retry) */}
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Refresh sensor network connection"
+        disabled={status === 'checking'}
         onPress={() => void refresh()}
         className="flex-row items-center rounded-full px-2.5 py-1 active:opacity-70"
-        style={{ backgroundColor: colors.surfaceAlt }}
+        style={{ backgroundColor: colors.surfaceAlt, minHeight: 44 }}
       >
         <Segment
           icon={apiOnline ? 'cloud-done' : 'cloud-offline'}
-          value="API"
+          value={apiOnline ? "Connected" : status === "checking" ? "Checking" : "Retry"}
           tint={apiOnline ? colors.online : status === 'offline' ? colors.danger : colors.warning}
           spinning={status === 'checking'}
         />
