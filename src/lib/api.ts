@@ -15,8 +15,8 @@
 // fetches fail with "Failed to fetch" even though the server is up — the
 // proxy fetches server-side and adds proper CORS headers. It also keeps the
 // upstream bearer token out of this shipped bundle.
-const CONVEX_SITE =
-  process.env.EXPO_PUBLIC_CONVEX_SITE_URL || 'https://formal-guanaco-79.convex.site';
+import { convexSiteUrl } from './backendConfig';
+const CONVEX_SITE = convexSiteUrl;
 
 export const API_BASE = `${CONVEX_SITE}/bh`;
 

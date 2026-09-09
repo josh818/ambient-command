@@ -8,6 +8,7 @@ import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import { anonymousClient, genericOAuthClient } from "better-auth/client/plugins";
 import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins";
+import { convexSiteUrl } from "../src/lib/backendConfig";
 import { AUTH_CONFIG } from "../shipper.auth";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
@@ -19,10 +20,7 @@ import { Platform } from "react-native";
  * - Provider wiring only; app UI should use the helper functions below
  */
 export const authClient = createAuthClient({
-  baseURL:
-    process.env.EXPO_PUBLIC_CONVEX_SITE_URL ||
-    process.env.EXPO_PUBLIC_CONVEX_URL ||
-    "",
+  baseURL: convexSiteUrl,
   plugins: [
     convexClient(),
     ...(Platform.OS === "web"
