@@ -23,7 +23,13 @@ import { WebAppFrame } from "../src/components/WebAppFrame";
   style: { fontFamily: 'Space Grotesk' },
 };
 
-const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
+// Fall back to the known production deployment address so a preview or web
+// export that is missing EXPO_PUBLIC_CONVEX_URL doesn't construct the client
+// with `undefined` and crash to a blank screen on startup.
+const CONVEX_URL =
+  process.env.EXPO_PUBLIC_CONVEX_URL || 'https://formal-guanaco-79.convex.cloud';
+
+const convex = new ConvexReactClient(CONVEX_URL, {
   unsavedChangesWarning: false,
 });
 

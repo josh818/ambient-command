@@ -1,13 +1,17 @@
 import { Platform, View, ActivityIndicator } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../src/constants/theme';
 import { useSession } from '../../lib/auth-client';
 import { GlobalStatusBar } from '../../src/components/GlobalStatusBar';
 
 export default function TabLayout() {
   const { data: session, isPending } = useSession();
+  const insets = useSafeAreaInsets();
+  // Respect the device's bottom safe area (home indicator) instead of a fixed
+  // pad, with a sensible floor on web where the inset is usually 0.
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 16 : 10);
 
   if (isPending) {
     return (
@@ -27,14 +31,17 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Hide the bar while the keyboard is open (e.g. the console input)
+          // so it doesn't float above the keyboard.
+          tabBarHideOnKeyboard: true,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textFaint,
           tabBarStyle: {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: Platform.select({ web: 88, default: 96 }),
-            paddingBottom: Platform.select({ web: 24, default: 32 }),
+            height: 60 + bottomPad,
+            paddingBottom: bottomPad,
             paddingTop: 10,
           },
           tabBarLabelStyle: { fontSize: 11, marginTop: 4, fontWeight: '600' },
@@ -76,15 +83,8 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="diagnostics"
-          options={{
-            title: 'Diagnostics',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="pulse-outline" size={size} color={color} />
-            ),
-          }}
-        />
+        {/* Diagnostics moved into Account — hidden from the tab bar, still routable. */}
+        <Tabs.Screen name="diagnostics" options={{ href: null }} />
         <Tabs.Screen
           name="account"
           options={{

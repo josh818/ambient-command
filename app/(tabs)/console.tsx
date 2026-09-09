@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation } from 'convex/react';
+import { useRouter } from 'expo-router';
 import { api } from '../../convex/_generated/api';
 import { useSession } from '../../lib/auth-client';
 import { colors, fonts } from '../../src/constants/theme';
@@ -41,8 +42,9 @@ const BANNER: OutputLine[] = [
 ];
 
 export default function ConsoleScreen() {
-  const { sensors, toggleSensor, renameSensor } = useSensors();
+  const { sensors, toggleSensor, commandValve, renameSensor } = useSensors();
   const { data: session } = useSession();
+  const router = useRouter();
   const logCommand = useMutation(api.mutations.logCommand);
   const [history, setHistory] = useState<OutputLine[]>(BANNER);
   const [input, setInput] = useState('');
@@ -53,7 +55,7 @@ export default function ConsoleScreen() {
     (raw: string) => {
       const cmd = raw.trim();
       if (!cmd) return;
-      const result = runCommand(cmd, { sensors, toggleSensor, renameSensor });
+      const result = runCommand(cmd, { sensors, toggleSensor, commandValve, renameSensor });
 
       if (result.navigate === '__clear__') {
         setHistory([]);
@@ -72,11 +74,16 @@ export default function ConsoleScreen() {
       setInput('');
       requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
     },
-    [sensors, toggleSensor, renameSensor],
+    [sensors, toggleSensor, commandValve, renameSensor],
   );
 
+  const goBack = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.push('/(tabs)');
+  }, [router]);
+
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
@@ -84,7 +91,16 @@ export default function ConsoleScreen() {
       >
         {/* Header */}
         <View className="px-5 pt-2 pb-3 flex-row items-center justify-between">
-          <View className="flex-row items-center">
+          <View className="flex-row items-center flex-1">
+            <Pressable
+              onPress={goBack}
+              accessibilityRole="button"
+              accessibilityLabel="Back to dashboard"
+              className="w-9 h-9 rounded-lg items-center justify-center active:opacity-70 mr-2"
+              style={{ backgroundColor: colors.surface }}
+            >
+              <Ionicons name="chevron-back" size={20} color={colors.text} />
+            </Pressable>
             <View
               className="w-9 h-9 rounded-lg items-center justify-center"
               style={{ backgroundColor: 'rgba(126,226,190,0.15)' }}
@@ -100,6 +116,8 @@ export default function ConsoleScreen() {
           </View>
           <Pressable
             onPress={() => setHistory([])}
+            accessibilityRole="button"
+            accessibilityLabel="Clear console"
             className="w-9 h-9 rounded-lg items-center justify-center active:opacity-70"
             style={{ backgroundColor: colors.surface }}
           >

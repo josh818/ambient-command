@@ -60,7 +60,7 @@ export default function DashboardScreen() {
   // empty state instead of health/stats/sensor sections.
   if (noDevicesAssigned) {
     return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }} edges={['top']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }} edges={[]}>
         <AmbientBackground />
         <ScrollView
           contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
@@ -109,7 +109,7 @@ export default function DashboardScreen() {
   const topAlerts = alerts.slice(0, 3);
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }} edges={[]}>
       <AmbientBackground />
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
@@ -146,14 +146,18 @@ export default function DashboardScreen() {
           <HealthRing health={health} onPress={handleHealthPress} />
         </View>
 
-        <View className="mt-4">
-          <LiveApiData />
-        </View>
-
         <View className="flex-row gap-3 mt-4">
           <StatTile icon="checkmark-circle" label="Online" value={`${stats.online}`} tint={colors.online} />
           <StatTile icon="alert-circle" label="Warnings" value={`${stats.warning}`} tint={colors.warning} />
           <StatTile icon="close-circle" label="Offline" value={`${stats.offline}`} tint={colors.offline} />
+        </View>
+
+        {/* Quick Controls — surfaced high so valves are one tap from the top */}
+        <View className="mt-6">
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>
+            Quick Controls
+          </Text>
+          <QuickControls />
         </View>
 
         {/* Analytics & timeline shortcuts */}
@@ -268,13 +272,6 @@ export default function DashboardScreen() {
 
         <View className="mt-6">
           <Text style={{ color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>
-            Quick Controls
-          </Text>
-          <QuickControls />
-        </View>
-
-        <View className="mt-6">
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>
             All Sensors
           </Text>
           {visibleSensors.map((s) => (
@@ -295,6 +292,12 @@ export default function DashboardScreen() {
               </Text>
             </Pressable>
           )}
+        </View>
+
+        {/* Connection details — moved below the working areas so telemetry
+            controls sit higher than the API/DB status readout */}
+        <View className="mt-6">
+          <LiveApiData />
         </View>
       </ScrollView>
     </SafeAreaView>

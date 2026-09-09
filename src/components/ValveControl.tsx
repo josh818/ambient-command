@@ -150,9 +150,12 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
         <Pressable
           onPress={() => setPending({ kind: 'open' })}
           disabled={offline || sending}
+          accessibilityRole="button"
+          accessibilityLabel={`Open the water valve on ${deviceName}`}
+          accessibilityState={{ disabled: offline || sending }}
           className="flex-1 items-center justify-center active:opacity-80"
           style={{
-            minHeight: 52,
+            minHeight: 56,
             borderRadius: 14,
             backgroundColor: `${colors.online}1A`,
             borderWidth: 1,
@@ -160,14 +163,17 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
             opacity: offline ? 0.5 : 1,
           }}
         >
-          <Text style={{ color: colors.online, fontSize: 15, fontWeight: '800' }}>Open Valve</Text>
+          <Text style={{ color: colors.online, fontSize: 16, fontWeight: '800' }}>Open Valve</Text>
         </Pressable>
         <Pressable
           onPress={() => setPending({ kind: 'close' })}
           disabled={offline || sending}
+          accessibilityRole="button"
+          accessibilityLabel={`Close the water valve on ${deviceName}`}
+          accessibilityState={{ disabled: offline || sending }}
           className="flex-1 items-center justify-center active:opacity-80"
           style={{
-            minHeight: 52,
+            minHeight: 56,
             borderRadius: 14,
             backgroundColor: `${colors.danger}1A`,
             borderWidth: 1,
@@ -175,7 +181,7 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
             opacity: offline ? 0.5 : 1,
           }}
         >
-          <Text style={{ color: colors.danger, fontSize: 15, fontWeight: '800' }}>Close Valve</Text>
+          <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '800' }}>Close Valve</Text>
         </Pressable>
       </View>
 
@@ -242,8 +248,15 @@ export function ValveControl({ moduleId, deviceName, valveOpen, offline }: Valve
         </View>
       )}
 
-      {/* Confirmation modal */}
-      <Modal visible={!!pending} transparent animationType="fade" onRequestClose={() => setPending(null)}>
+      {/* Confirmation modal — can't be dismissed while a command is sending */}
+      <Modal
+        visible={!!pending}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!sending) setPending(null);
+        }}
+      >
         <View
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}
         >
@@ -332,29 +345,38 @@ function Stepper({
       >
         <Pressable
           onPress={() => onChange(Math.max(min, value - 1))}
+          accessibilityRole="button"
+          accessibilityLabel={`Decrease ${label}`}
+          hitSlop={6}
           className="items-center justify-center active:opacity-70"
-          style={{ width: 40, height: 40 }}
+          style={{ width: 48, height: 48 }}
         >
-          <Ionicons name="remove" size={18} color={colors.primary} />
+          <Ionicons name="remove" size={22} color={colors.primary} />
         </Pressable>
-        <Text style={{ color: colors.text, fontSize: 15, fontWeight: '800', width: 40, textAlign: 'center' }}>
+        <Text style={{ color: colors.text, fontSize: 16, fontWeight: '800', width: 44, textAlign: 'center' }}>
           {value}
         </Text>
         <Pressable
           onPress={() => onChange(Math.min(max, value + 1))}
+          accessibilityRole="button"
+          accessibilityLabel={`Increase ${label}`}
+          hitSlop={6}
           className="items-center justify-center active:opacity-70"
-          style={{ width: 40, height: 40 }}
+          style={{ width: 48, height: 48 }}
         >
-          <Ionicons name="add" size={18} color={colors.primary} />
+          <Ionicons name="add" size={22} color={colors.primary} />
         </Pressable>
       </View>
       <Pressable
         onPress={onApply}
         disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={`Start ${label}`}
+        accessibilityState={{ disabled }}
         className="items-center justify-center active:opacity-80"
         style={{
-          height: 40,
-          paddingHorizontal: 16,
+          height: 48,
+          paddingHorizontal: 18,
           borderRadius: 12,
           backgroundColor: applyBg,
           borderWidth: 1,
@@ -362,7 +384,7 @@ function Stepper({
           opacity: disabled ? 0.5 : 1,
         }}
       >
-        <Text style={{ color: applyText, fontSize: 13, fontWeight: '800' }}>Start</Text>
+        <Text style={{ color: applyText, fontSize: 14, fontWeight: '800' }}>Start</Text>
       </Pressable>
     </View>
   );

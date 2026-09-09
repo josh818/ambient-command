@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,12 +48,23 @@ export default function AccountScreen() {
   const { isPremium } = useSubscription();
   const { isAdmin } = useDeviceAccess();
 
+  const [signingOut, setSigningOut] = useState(false);
+
   const user = session?.user;
   const planLabel = isPremium ? 'Premium plan · unlimited' : 'Free plan · 3 sensors';
 
   const handleSignOut = async () => {
-    await signOutUser();
-    router.replace('/auth');
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOutUser();
+    } catch {
+      // Even if the sign-out call fails, fall through to the auth screen so the
+      // button never gets stuck in a loading state.
+    } finally {
+      setSigningOut(false);
+      router.replace('/auth');
+    }
   };
 
   if (isPending) {
@@ -64,7 +76,7 @@ export default function AccountScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
@@ -161,6 +173,13 @@ export default function AccountScreen() {
             tint={colors.primary}
             onPress={() => router.push('/settings/history')}
           />
+          <Row
+            icon="pulse-outline"
+            label="Diagnostics"
+            sub="Connectivity & system self-test"
+            tint={colors.primary}
+            onPress={() => router.push('/(tabs)/diagnostics')}
+          />
           {isAdmin && (
             <Row
               icon="key-outline"
@@ -195,13 +214,22 @@ export default function AccountScreen() {
 
         <Pressable
           onPress={handleSignOut}
+          disabled={signingOut}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
           className="rounded-2xl mt-4 py-4 items-center flex-row justify-center active:opacity-80"
-          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, opacity: signingOut ? 0.7 : 1 }}
         >
-          <Ionicons name="log-out-outline" size={18} color="#f87171" />
-          <Text style={{ color: '#f87171', fontSize: 15, fontWeight: '600', marginLeft: 8 }}>
-            Sign Out
-          </Text>
+          {signingOut ? (
+            <ActivityIndicator size="small" color="#f87171" />
+          ) : (
+            <>
+              <Ionicons name="log-out-outline" size={18} color="#f87171" />
+              <Text style={{ color: '#f87171', fontSize: 15, fontWeight: '600', marginLeft: 8 }}>
+                Sign Out
+              </Text>
+            </>
+          )}
         </Pressable>
 
         <Text style={{ color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: 20 }}>

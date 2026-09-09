@@ -6,6 +6,7 @@ import { mockSensors, rosterEntry, type Sensor } from './mockData';
 import { useLiveRoster, type RosterEntry } from './liveRoster';
 import { notifySuccess, notifyError } from './notify';
 import { useDeviceAccess } from './deviceAccess';
+import { issueCommand } from './api';
 
 // Sensor naming + power state is now persisted to Shipper Cloud (Convex)
 // per-user. We merge the user's saved settings on top of the mock catalog
@@ -140,6 +141,35 @@ export function useSensors() {
     [findSetting, createSetting, updateSetting],
   );
 
+  // REAL hardware valve actuation. Unlike toggleSensor (which only saves the
+  // app-side desired state), this fires the actual IssueCommand through the
+  // /bh proxy — VALVE,OPEN / VALVE,CLOSE — the same channel the sensor detail
+  // page uses. The command is QUEUED server-side and applies the next time the
+  // (battery, sleeping) module checks in, so this is deliberately not instant.
+  // We also persist the requested state so the UI reflects the intent.
+  const commandValve = useCallback(
+    async (id: string, open: boolean) => {
+      const label = sensors.find((s) => s.id === id)?.defaultName ?? 'Device';
+      try {
+        await issueCommand(id, open ? 'VALVE,OPEN' : 'VALVE,CLOSE');
+        const existing = findSetting(id);
+        if (existing) {
+          await updateSetting({ id: existing._id as any, isOn: open, updatedAt: Date.now() });
+        } else {
+          await createSetting({ sensorId: id, isOn: open, updatedAt: Date.now() });
+        }
+        notifySuccess(
+          `${label}: ${open ? 'open' : 'close'} command queued`,
+          'Applies the next time the module checks in',
+        );
+      } catch (e) {
+        notifyError('Command failed', e instanceof Error ? e.message : 'Could not reach the device');
+        throw e;
+      }
+    },
+    [sensors, findSetting, createSetting, updateSetting],
+  );
+
   // Signed in, access resolved, and zero devices assigned → screens show a
   // designed "no devices assigned" empty state instead of an empty list.
   const noDevicesAssigned =
@@ -149,6 +179,7 @@ export function useSensors() {
     sensors,
     renameSensor,
     toggleSensor,
+    commandValve,
     ready: (settings !== undefined || !session) && !access.loading,
     access,
     noDevicesAssigned,
@@ -156,7 +187,7 @@ export function useSensors() {
 }
 
 export function useSensor(id: string | undefined) {
-  const { sensors, renameSensor, toggleSensor, ready } = useSensors();
+  const { sensors, renameSensor, toggleSensor, commandValve, ready } = useSensors();
   const sensor = sensors.find((s) => s.id === id);
-  return { sensor, renameSensor, toggleSensor, ready };
+  return { sensor, renameSensor, toggleSensor, commandValve, ready };
 }

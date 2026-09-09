@@ -19,10 +19,13 @@ import { Platform } from "react-native";
  * - Provider wiring only; app UI should use the helper functions below
  */
 export const authClient = createAuthClient({
+  // Default to the known production auth address so a preview/export missing
+  // these env vars still has a valid baseURL instead of "" (which breaks
+  // every auth call and can hang sign-in).
   baseURL:
     process.env.EXPO_PUBLIC_CONVEX_SITE_URL ||
     process.env.EXPO_PUBLIC_CONVEX_URL ||
-    "",
+    "https://formal-guanaco-79.convex.site",
   plugins: [
     convexClient(),
     ...(Platform.OS === "web"

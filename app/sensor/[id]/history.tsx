@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   useMeasurementData,
   extractSeries,
   downsampleSeries,
+  deriveSwitchFlushes,
   WINDOW_24H_MS,
   WINDOW_7D_MS,
   WINDOW_30D_MS,
@@ -140,15 +141,18 @@ function ChartCard({
 
 // ── Time axis ────────────────────────────────────────────────────────────────
 
-function makeXTicks(tStart: number, tEnd: number, win: WindowKey): XTick[] {
+// Label format follows the VISIBLE span, not the outer window — so zooming
+// into a few hours of a 30-day window still shows clock times.
+function makeXTicks(tStart: number, tEnd: number): XTick[] {
+  const span = tEnd - tStart;
+  const useTime = span <= WINDOW_24H_MS * 1.5;
   const fracs = [0, 1 / 3, 2 / 3, 1];
   return fracs.map((f) => {
-    const t = tStart + (tEnd - tStart) * f;
+    const t = tStart + span * f;
     const d = new Date(t);
-    const label =
-      win === '24h'
-        ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : d.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
+    const label = useTime
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
     return { t, label };
   });
 }
@@ -180,8 +184,75 @@ const fmtMa = (v: number) => `${Math.round(v * 10) / 10} mA`;
 const fmtC = (v: number) => `${Math.round(v * 10) / 10}°C`;
 const fmtOpen = (v: number) => (v >= 0.5 ? 'Open' : 'Closed');
 const fmtLeak = (v: number) => (v >= 0.5 ? 'Leak' : 'Clear');
+const fmtFlush = (v: number) => (v >= 0.5 ? 'Flush' : 'Idle');
+
+function fmtRange(start: number, end: number): string {
+  const s = new Date(start);
+  const e = new Date(end);
+  const sameDay = s.toDateString() === e.toDateString();
+  const t = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const d = (dd: Date) => dd.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
+  return sameDay ? `${d(s)} ${t(s)}–${t(e)}` : `${d(s)} ${t(s)} – ${d(e)} ${t(e)}`;
+}
+
+function fmtSpan(ms: number): string {
+  const min = Math.round(ms / 60000);
+  if (min < 60) return `${min}m`;
+  const hr = ms / 3600000;
+  if (hr < 48) return `${Math.round(hr * 10) / 10}h`;
+  return `${Math.round(hr / 24)}d`;
+}
+
+function ZoomBtn({
+  icon,
+  label,
+  onPress,
+  disabled,
+  primary,
+}: {
+  icon: string;
+  label?: string;
+  onPress: () => void;
+  disabled?: boolean;
+  primary?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label ?? icon}
+      className="flex-row items-center justify-center active:opacity-70"
+      style={{
+        height: 34,
+        paddingHorizontal: label ? 12 : 10,
+        borderRadius: 10,
+        backgroundColor: primary ? colors.primary : colors.surfaceAlt,
+        borderWidth: 1,
+        borderColor: primary ? colors.primary : colors.border,
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <Ionicons name={icon as any} size={16} color={primary ? colors.bg : colors.text} />
+      {label ? (
+        <Text
+          style={{
+            color: primary ? colors.bg : colors.text,
+            fontSize: 12,
+            fontWeight: '700',
+            marginLeft: 4,
+          }}
+        >
+          {label}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
 
 // ── Screen ───────────────────────────────────────────────────────────────────
+
+const MIN_VIEW_MS = 5 * 60 * 1000; // don't zoom tighter than 5 minutes
 
 export default function SensorHistory() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -195,38 +266,93 @@ export default function SensorHistory() {
 
   const chartW = width - 40 - 40; // screen padding (20×2) + card padding (20×2)
 
-  const trends = useMemo(() => {
-    const tEnd = Date.now();
-    const tStart = tEnd - windowMs;
+  // Full domain for the selected window. Frozen per data load so zoom/pan
+  // interactions don't make the domain drift under the user.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fullEnd = useMemo(() => Date.now(), [records, windowMs]);
+  const fullStart = fullEnd - windowMs;
 
-    const pressure = extractSeries(records, (r) => r.pressureFreq);
-    const batVolts = extractSeries(records, (r) => r.sysVolts);
-    const chgVolts = extractSeries(records, (r) => r.chargeVolts);
-    const batAmps = extractSeries(records, (r) => (r.sysAmps === null ? null : r.sysAmps * 1000));
-    const chgAmps = extractSeries(records, (r) =>
+  // Zoom/pan view sub-range. null = the whole window. Reset when the window
+  // button changes.
+  const [view, setView] = useState<{ start: number; end: number } | null>(null);
+  useEffect(() => setView(null), [win]);
+
+  const vStart = view ? view.start : fullStart;
+  const vEnd = view ? view.end : fullEnd;
+  const zoomed = view !== null;
+
+  // Records inside the visible sub-range — re-sliced so zooming in reveals
+  // more detail (each downsample bucket covers a narrower slice of time).
+  const visibleRecords = useMemo(
+    () => records.filter((r) => r.t >= vStart && r.t <= vEnd),
+    [records, vStart, vEnd],
+  );
+
+  // ── Zoom/pan controls ──────────────────────────────────────────────────────
+  const applyView = (start: number, end: number) => {
+    const s = Math.max(fullStart, start);
+    const e = Math.min(fullEnd, end);
+    if (e - s < MIN_VIEW_MS) return;
+    setView(s <= fullStart && e >= fullEnd ? null : { start: s, end: e });
+  };
+  const zoomIn = () => {
+    const span = vEnd - vStart;
+    const next = span * 0.55;
+    if (next < MIN_VIEW_MS) return;
+    const mid = vStart + span / 2;
+    applyView(mid - next / 2, mid + next / 2);
+  };
+  const zoomOut = () => {
+    const span = vEnd - vStart;
+    const next = span / 0.55;
+    const mid = vStart + span / 2;
+    applyView(mid - next / 2, mid + next / 2);
+  };
+  const panBy = (frac: number) => {
+    const span = vEnd - vStart;
+    const shift = span * frac;
+    let s = vStart + shift;
+    let e = vEnd + shift;
+    if (s < fullStart) { s = fullStart; e = s + span; }
+    if (e > fullEnd) { e = fullEnd; s = e - span; }
+    applyView(s, e);
+  };
+
+  const flush = useMemo(() => deriveSwitchFlushes(visibleRecords), [visibleRecords]);
+
+  const trends = useMemo(() => {
+    const tStart = vStart;
+    const tEnd = vEnd;
+
+    const pressure = extractSeries(visibleRecords, (r) => r.pressureFreq);
+    const batVolts = extractSeries(visibleRecords, (r) => r.sysVolts);
+    const chgVolts = extractSeries(visibleRecords, (r) => r.chargeVolts);
+    const batAmps = extractSeries(visibleRecords, (r) => (r.sysAmps === null ? null : r.sysAmps * 1000));
+    const chgAmps = extractSeries(visibleRecords, (r) =>
       r.chargeAmps === null ? null : r.chargeAmps * 1000,
     );
-    const flow = extractSeries(records, (r) => r.flowFreq);
-    const temp = extractSeries(records, (r) => r.temperatureC);
-    const valve = extractSeries(records, (r) => r.valveState);
-    const leak = extractSeries(records, (r) => (r.leakDetected ? 1 : 0));
+    const flowS = extractSeries(visibleRecords, (r) => r.flowFreq);
+    const temp = extractSeries(visibleRecords, (r) => r.temperatureC);
+    const valve = extractSeries(visibleRecords, (r) => r.valveState);
+    const leak = extractSeries(visibleRecords, (r) => (r.leakDetected ? 1 : 0));
 
     return {
       tStart,
       tEnd,
-      xTicks: makeXTicks(tStart, tEnd, win),
-      closedBands: switchClosedBands(records),
+      xTicks: makeXTicks(tStart, tEnd),
+      closedBands: switchClosedBands(visibleRecords),
       pressure: { pts: downsampleSeries(pressure, MAX_POINTS, 'mean'), stats: seriesStats(pressure) },
       batVolts: { pts: downsampleSeries(batVolts, MAX_POINTS, 'mean'), stats: seriesStats(batVolts) },
       chgVolts: { pts: downsampleSeries(chgVolts, MAX_POINTS, 'mean') },
       batAmps: { pts: downsampleSeries(batAmps, MAX_POINTS, 'mean'), stats: seriesStats(batAmps) },
       chgAmps: { pts: downsampleSeries(chgAmps, MAX_POINTS, 'mean') },
-      flow: { pts: downsampleSeries(flow, MAX_POINTS, 'mean'), stats: seriesStats(flow) },
+      flow: { pts: downsampleSeries(flowS, MAX_POINTS, 'mean'), stats: seriesStats(flowS) },
       temp: { pts: downsampleSeries(temp, MAX_POINTS, 'mean'), stats: seriesStats(temp) },
       valve: { pts: downsampleSeries(valve, MAX_POINTS, 'last'), stats: seriesStats(valve) },
       leak: { pts: downsampleSeries(leak, MAX_POINTS, 'max'), stats: seriesStats(leak) },
+      flushPulse: downsampleSeries(flush.pulse, MAX_POINTS, 'last'),
     };
-  }, [records, windowMs, win]);
+  }, [visibleRecords, vStart, vEnd, flush.pulse]);
 
   if (!sensor) {
     return (
@@ -287,6 +413,38 @@ export default function SensorHistory() {
           })}
         </View>
 
+        {/* Zoom / pan toolbar — one shared time domain drives every chart, so
+            pressure and switch (and everything else) stay aligned as you drill in. */}
+        {!loading && hasData && (
+          <View
+            className="rounded-xl mb-4 px-3 py-2.5"
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="search-outline" size={14} color={colors.textFaint} />
+              <Text style={{ color: colors.textMuted, fontSize: 12, marginLeft: 6, flex: 1 }} numberOfLines={1}>
+                {zoomed
+                  ? `${fmtRange(vStart, vEnd)} · ${fmtSpan(vEnd - vStart)}`
+                  : `Full ${WINDOWS.find((w) => w.key === win)!.label} · zoom to inspect`}
+              </Text>
+            </View>
+            <View className="flex-row items-center" style={{ gap: 8, marginTop: 8 }}>
+              <ZoomBtn icon="chevron-back" onPress={() => panBy(-0.3)} disabled={!zoomed} />
+              <ZoomBtn icon="remove" label="Out" onPress={zoomOut} disabled={!zoomed} />
+              <ZoomBtn
+                icon="add"
+                label="In"
+                onPress={zoomIn}
+                disabled={vEnd - vStart <= MIN_VIEW_MS}
+                primary
+              />
+              <ZoomBtn icon="chevron-forward" onPress={() => panBy(0.3)} disabled={!zoomed} />
+              <View style={{ flex: 1 }} />
+              <ZoomBtn icon="scan-outline" label="Reset" onPress={() => setView(null)} disabled={!zoomed} />
+            </View>
+          </View>
+        )}
+
         {/* Loading */}
         {loading && (
           <View
@@ -322,7 +480,9 @@ export default function SensorHistory() {
         {!loading && hasData && (
           <>
             <Text style={{ color: colors.textFaint, fontSize: 11, marginBottom: 12 }}>
-              {records.length} records · live server data
+              {zoomed
+                ? `${visibleRecords.length} of ${records.length} records in view`
+                : `${records.length} records · live server data`}
             </Text>
 
             {/* Truncation honesty — the fetch hit max_count inside this window */}
@@ -360,6 +520,70 @@ export default function SensorHistory() {
                 yFormat={(v) => `${Math.round(v * 10) / 10}`}
               />
             </ChartCard>
+
+            {/* 1b — Flushes (pressure switch actuation) */}
+            <View
+              className="rounded-2xl"
+              style={{
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: 20,
+                marginBottom: 16,
+              }}
+            >
+              <View className="flex-row items-center mb-3">
+                <Ionicons name="pulse-outline" size={15} color={colors.primary} />
+                <View style={{ marginLeft: 7, flex: 1 }}>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>Flushes</Text>
+                  <Text style={{ color: colors.textFaint, fontSize: 11, marginTop: 1 }}>
+                    Each pressure-switch actuation (open → closed) = one flush
+                  </Text>
+                </View>
+              </View>
+
+              {trends.flushPulse.length === 0 ? (
+                <View className="items-center" style={{ paddingVertical: 26 }}>
+                  <Ionicons name="pulse-outline" size={22} color={colors.textFaint} />
+                  <Text style={{ color: colors.textMuted, fontSize: 13, marginTop: 8 }}>
+                    No pressure-switch readings in this window
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {/* Big flush count for the visible window */}
+                  <View className="flex-row items-end" style={{ marginBottom: 12 }}>
+                    <Text style={{ color: colors.primary, fontSize: 34, fontWeight: '800', lineHeight: 36 }}>
+                      {flush.count}
+                    </Text>
+                    <Text style={{ color: colors.textMuted, fontSize: 13, marginLeft: 8, marginBottom: 4 }}>
+                      {flush.count === 1 ? 'flush' : 'flushes'}
+                      {zoomed ? ' in view' : ` in ${WINDOWS.find((w) => w.key === win)!.label}`}
+                    </Text>
+                    {flush.lastAt ? (
+                      <Text style={{ color: colors.textFaint, fontSize: 12, marginLeft: 'auto', marginBottom: 4 }}>
+                        last {new Date(flush.lastAt).toLocaleString([], {
+                          month: 'numeric',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  <TrendChart
+                    {...common}
+                    series={[{ label: 'Flush', color: TREND_COLORS.aqua, points: trends.flushPulse }]}
+                    step
+                    height={120}
+                    yDomain={[0, 1]}
+                    yTicks={[0, 1]}
+                    yFormat={fmtFlush}
+                  />
+                </>
+              )}
+            </View>
 
             {/* 2 — Battery & Charge Voltage */}
             <ChartCard

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const passwordRef = useRef<TextInput>(null);
   const ensureDemoData = useMutation(api.demo.ensureDemoData);
 
   // Seed the demo account with scenes + sensor settings so dashboards aren't
@@ -49,54 +50,73 @@ export default function AuthScreen() {
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     setError(null);
     if (!email.trim() || !password) {
       setError('Please enter your email and password');
       return;
     }
     setLoading(true);
-    const result =
-      mode === 'signin'
-        ? await signInWithEmail(email.trim(), password)
-        : await signUpWithEmail(email.trim(), password, name.trim());
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Something went wrong');
-      return;
+    try {
+      const result =
+        mode === 'signin'
+          ? await signInWithEmail(email.trim(), password)
+          : await signUpWithEmail(email.trim(), password, name.trim());
+      if (!result.success) {
+        setError(result.error?.message ?? 'Something went wrong');
+        return;
+      }
+      // Test accounts (demo / josh-tester @ambientcommand.app) get their demo
+      // data + device assignments seeded on every sign-in. No-op for real users.
+      if (email.trim().toLowerCase().endsWith('@ambientcommand.app')) {
+        seedDemoData();
+      }
+      router.replace('/(tabs)');
+    } catch (e) {
+      // Any thrown error (network, unexpected) must not leave the button spinning.
+      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    // Test accounts (demo / josh-tester @ambientcommand.app) get their demo
-    // data + device assignments seeded on every sign-in. No-op for real users.
-    if (email.trim().toLowerCase().endsWith('@ambientcommand.app')) {
-      seedDemoData();
-    }
-    router.replace('/(tabs)');
   };
 
   const handleTestAccount = async () => {
+    if (loading) return;
     setError(null);
     setLoading(true);
-    // Try signing in first; if the demo account doesn't exist yet, create it.
-    let result = await signInWithEmail(TEST_EMAIL, TEST_PASSWORD);
-    if (!result.success) {
-      result = await signUpWithEmail(TEST_EMAIL, TEST_PASSWORD, TEST_NAME);
+    try {
+      // Try signing in first; if the demo account doesn't exist yet, create it.
+      let result = await signInWithEmail(TEST_EMAIL, TEST_PASSWORD);
+      if (!result.success) {
+        result = await signUpWithEmail(TEST_EMAIL, TEST_PASSWORD, TEST_NAME);
+      }
+      if (!result.success) {
+        setError(result.error?.message ?? 'Could not start the demo session');
+        return;
+      }
+      // Fire-and-forget: never blocks or fails the demo sign-in itself.
+      seedDemoData();
+      router.replace('/(tabs)');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not start the demo session');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Could not start the demo session');
-      return;
-    }
-    // Fire-and-forget: never blocks or fails the demo sign-in itself.
-    seedDemoData();
-    router.replace('/(tabs)');
   };
 
   const handleGoogle = async () => {
+    if (loading) return;
     setError(null);
     setLoading(true);
-    const result = await signInWithGoogle('/(tabs)');
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Google sign-in failed');
+    try {
+      const result = await signInWithGoogle('/(tabs)');
+      if (!result.success) {
+        setError(result.error?.message ?? 'Google sign-in failed');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Google sign-in failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -197,6 +217,12 @@ export default function AuthScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            textContentType="emailAddress"
+            autoComplete="email"
+            importantForAutofill="yes"
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            blurOnSubmit={false}
           />
 
           <TextInput
@@ -208,11 +234,17 @@ export default function AuthScreen() {
               color: colors.text,
               fontSize: 15,
             }}
+            ref={passwordRef}
             placeholder="Password"
             placeholderTextColor={colors.textFaint}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            textContentType="password"
+            autoComplete="password"
+            importantForAutofill="yes"
+            returnKeyType="go"
+            onSubmitEditing={handleSubmit}
           />
 
           {error && (

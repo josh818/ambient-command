@@ -3,6 +3,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { useSession } from '../../lib/auth-client';
 import { api } from '../../convex/_generated/api';
 import { notifySuccess, notifyError } from './notify';
+import { issueCommand } from './api';
 
 // Scenes are one-tap shortcuts that set multiple shut-off valves to a target
 // state at once. Persisted to Shipper Cloud per-user; triggering applies every
@@ -120,8 +121,31 @@ export function useScenes() {
   const triggerScene = useCallback(
     async (scene: Scene) => {
       try {
-        const res = (await triggerMutation({ id: scene._id as any })) as { applied: number };
-        notifySuccess(`${scene.name} activated`, `${res.applied} device${res.applied === 1 ? '' : 's'} updated`);
+        // 1) Persist the requested valve states (app-side desired state).
+        await triggerMutation({ id: scene._id as any });
+        // 2) Fire the REAL hardware command for every action in the scene, in
+        //    parallel. Each action's sensorId IS the module_id. Commands are
+        //    queued server-side and apply on each module's next check-in.
+        const results = await Promise.allSettled(
+          scene.actions.map((a) =>
+            issueCommand(a.sensorId, a.valveOpen ? 'VALVE,OPEN' : 'VALVE,CLOSE'),
+          ),
+        );
+        const queued = results.filter((r) => r.status === 'fulfilled').length;
+        const failed = results.length - queued;
+        if (failed === 0) {
+          notifySuccess(
+            `${scene.name} activated`,
+            `${queued} valve command${queued === 1 ? '' : 's'} queued · apply on next check-in`,
+          );
+        } else if (queued > 0) {
+          notifyError(
+            `${scene.name}: partial`,
+            `${queued} queued, ${failed} could not be sent. Retry, or set those valves individually.`,
+          );
+        } else {
+          notifyError('Scene failed', 'No valve commands could be sent. Check the connection and retry.');
+        }
       } catch (e) {
         notifyError('Scene failed', e instanceof Error ? e.message : 'Could not reach devices');
         throw e;

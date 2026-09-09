@@ -52,12 +52,15 @@ export function computeSystemHealth(
   const problemCount = sensors.filter(isProblemSensor).length;
 
   if (reporting.length === 0) {
+    // No sensor has reported real telemetry yet. Show an explicit awaiting
+    // state rather than a computed score, so missing data never reads as a
+    // healthy (green) system.
     return {
       score: null,
-      statusLine: 'Standby — awaiting telemetry',
+      statusLine: 'Awaiting sensor readings',
       problemCount: 0,
       color: colors.textFaint,
-      bandLabel: 'STANDBY',
+      bandLabel: 'AWAITING',
     };
   }
 

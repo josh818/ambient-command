@@ -16,6 +16,8 @@ export interface OutputLine {
 export interface CommandContext {
   sensors: Sensor[];
   toggleSensor: (id: string, value: boolean) => Promise<void> | void;
+  /** Fires the REAL hardware valve command (IssueCommand). */
+  commandValve: (id: string, open: boolean) => Promise<void> | void;
   renameSensor: (id: string, name: string) => Promise<void> | void;
 }
 
@@ -151,10 +153,12 @@ export function runCommand(raw: string, ctx: CommandContext): CommandResult {
         return { lines: [line(`${s.defaultName} has no shut-off valve.`, 'error')] };
       }
       const value = cmd === 'on';
-      void ctx.toggleSensor(s.id, value);
+      // REAL hardware command — queued server-side, applies on next check-in.
+      void ctx.commandValve(s.id, value);
       return {
         lines: [
-          line(`✓ ${s.defaultName} valve ${value ? 'OPENED' : 'CLOSED'}`, 'success'),
+          line(`✓ ${s.defaultName} valve ${value ? 'OPEN' : 'CLOSE'} command queued`, 'success'),
+          line('  applies the next time the module checks in', 'muted'),
         ],
       };
     }

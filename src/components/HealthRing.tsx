@@ -124,8 +124,8 @@ export function HealthRing({
           {standby ? (
             <>
               <Ionicons name="cloud-outline" size={30} color={colors.textFaint} />
-              <Text style={{ color: colors.textFaint, fontSize: 12, fontWeight: '700', marginTop: 6 }}>
-                NO DATA
+              <Text style={{ color: colors.textFaint, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 6 }}>
+                AWAITING
               </Text>
             </>
           ) : (

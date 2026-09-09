@@ -215,6 +215,49 @@ export function deriveMeasurements(records: MeasurementRecord[]): DerivedMeasure
   };
 }
 
+// ── Pressure-switch flush detection (pure) ──────────────────────────────────
+// A flush shows up as the pressure switch actuating. Polarity (vendor-
+// confirmed): pressureSwitchStart true = OPEN (1), false = CLOSED (0). We treat
+// each OPEN→CLOSED transition as one flush event, and emit a pulse series where
+// 1 = switch closed (flush active) and 0 = open, so every flush reads as a
+// clear upward pulse on the chart. Built ONLY from real records — never faked.
+
+export interface SwitchFlush {
+  t: number; // epoch ms of the flush (the record where it went closed)
+}
+
+export interface SwitchFlushResult {
+  /** Number of OPEN→CLOSED transitions in the window. */
+  count: number;
+  /** The flush events (rising edges into "closed"). */
+  events: SwitchFlush[];
+  /** Pulse step series: 1 = switch closed (flush active), 0 = open. */
+  pulse: TrendPoint[];
+  /** Epoch ms of the most recent flush, or null. */
+  lastAt: number | null;
+}
+
+export function deriveSwitchFlushes(records: MeasurementRecord[]): SwitchFlushResult {
+  const events: SwitchFlush[] = [];
+  const pulse: TrendPoint[] = [];
+  let prevClosed: boolean | null = null;
+  for (const r of records) {
+    if (r.pressureSwitchStart === null) continue;
+    const closed = r.pressureSwitchStart === false; // closed = flush active
+    pulse.push({ t: r.t, value: closed ? 1 : 0 });
+    if (prevClosed === false && closed === true) {
+      events.push({ t: r.t }); // rising edge: open → closed
+    }
+    prevClosed = closed;
+  }
+  return {
+    count: events.length,
+    events,
+    pulse,
+    lastAt: events.length ? events[events.length - 1].t : null,
+  };
+}
+
 // ── Downsampling (pure — used by the trends charts) ─────────────────────────
 
 export interface TrendPoint {
