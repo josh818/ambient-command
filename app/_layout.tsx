@@ -4,6 +4,7 @@ import { Text as RNText, TextInput as RNTextInput } from 'react-native';
 // SafeAreaProvider import redirected to the Shipper preview shim below.
 import { ConvexReactClient } from 'convex/react';
 import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
+import { convexUrl } from '../src/lib/backendConfig';
 import { authClient } from '../lib/auth-client';
 import { ToastHost } from '../src/components/ToastHost';
 import '../global.css';
@@ -23,19 +24,14 @@ import { WebAppFrame } from "../src/components/WebAppFrame";
   style: { fontFamily: 'Space Grotesk' },
 };
 
-const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
+const convex = new ConvexReactClient(convexUrl, {
   unsavedChangesWarning: false,
 });
 
 export default function RootLayout() {
   return (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <SafeAreaProvider
-        initialMetrics={{
-          insets: { top: 72, bottom: 34, left: 0, right: 0 },
-          frame: { x: 0, y: 0, width: 393, height: 852 },
-        }}
-      >
+      <SafeAreaProvider>
         <StatusBar style="light" />
         <ToastHost />
         <WebAppFrame>

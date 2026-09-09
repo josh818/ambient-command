@@ -76,7 +76,7 @@ export default function ConsoleScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"

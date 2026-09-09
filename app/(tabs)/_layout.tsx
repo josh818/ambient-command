@@ -1,13 +1,14 @@
-import { Platform, View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../src/constants/theme';
 import { useSession } from '../../lib/auth-client';
 import { GlobalStatusBar } from '../../src/components/GlobalStatusBar';
 
 export default function TabLayout() {
   const { data: session, isPending } = useSession();
+  const insets = useSafeAreaInsets();
 
   if (isPending) {
     return (
@@ -33,11 +34,12 @@ export default function TabLayout() {
             backgroundColor: colors.surface,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: Platform.select({ web: 88, default: 96 }),
-            paddingBottom: Platform.select({ web: 24, default: 32 }),
+            height: 64 + Math.max(insets.bottom, 8),
+            paddingBottom: Math.max(insets.bottom, 8),
             paddingTop: 10,
           },
-          tabBarLabelStyle: { fontSize: 11, marginTop: 4, fontWeight: '600' },
+          tabBarHideOnKeyboard: true,
+          tabBarLabelStyle: { fontSize: 12, marginTop: 4, fontWeight: '600' },
         }}
       >
         <Tabs.Screen
@@ -76,15 +78,7 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="diagnostics"
-          options={{
-            title: 'Diagnostics',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="pulse-outline" size={size} color={color} />
-            ),
-          }}
-        />
+        <Tabs.Screen name="diagnostics" options={{ href: null }} />
         <Tabs.Screen
           name="account"
           options={{

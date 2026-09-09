@@ -231,7 +231,7 @@ export default function DiagnosticsScreen() {
   const doneCount = steps.filter((s) => s.state === 'pass' || s.state === 'fail').length;
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.bg }} edges={[]}>
       <View className="px-5 pt-2 pb-1">
         <Text style={{ color: colors.text, fontSize: 26, fontWeight: '800' }}>Diagnostics</Text>
         <Text style={{ color: colors.textFaint, fontSize: 13, marginTop: 2 }}>

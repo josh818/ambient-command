@@ -24,8 +24,6 @@ import {
 } from '../lib/auth-client';
 
 const TEST_EMAIL = 'demo@ambientcommand.app';
-const TEST_PASSWORD = 'ambient-demo-1234';
-const TEST_NAME = 'Demo User';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -55,48 +53,40 @@ export default function AuthScreen() {
       return;
     }
     setLoading(true);
-    const result =
-      mode === 'signin'
+    try {
+      const result = mode === 'signin'
         ? await signInWithEmail(email.trim(), password)
         : await signUpWithEmail(email.trim(), password, name.trim());
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Something went wrong');
-      return;
+      if (!result.success) {
+        setError(result.error?.message ?? 'Something went wrong');
+        return;
+      }
+      if (email.trim().toLowerCase().endsWith('@ambientcommand.app')) seedDemoData();
+      router.replace('/(tabs)');
+    } catch {
+      setError('Unable to connect. Check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
-    // Test accounts (demo / josh-tester @ambientcommand.app) get their demo
-    // data + device assignments seeded on every sign-in. No-op for real users.
-    if (email.trim().toLowerCase().endsWith('@ambientcommand.app')) {
-      seedDemoData();
-    }
-    router.replace('/(tabs)');
   };
 
-  const handleTestAccount = async () => {
-    setError(null);
-    setLoading(true);
-    // Try signing in first; if the demo account doesn't exist yet, create it.
-    let result = await signInWithEmail(TEST_EMAIL, TEST_PASSWORD);
-    if (!result.success) {
-      result = await signUpWithEmail(TEST_EMAIL, TEST_PASSWORD, TEST_NAME);
-    }
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Could not start the demo session');
-      return;
-    }
-    // Fire-and-forget: never blocks or fails the demo sign-in itself.
-    seedDemoData();
-    router.replace('/(tabs)');
+  const handleTestAccount = () => {
+    setMode('signin');
+    setEmail(TEST_EMAIL);
+    setPassword('');
+    setError('Enter the test account password to continue.');
   };
 
   const handleGoogle = async () => {
     setError(null);
     setLoading(true);
-    const result = await signInWithGoogle('/(tabs)');
-    setLoading(false);
-    if (!result.success) {
-      setError(result.error?.message ?? 'Google sign-in failed');
+    try {
+      const result = await signInWithGoogle('/(tabs)');
+      if (!result.success) setError(result.error?.message ?? 'Google sign-in failed');
+    } catch {
+      setError('Unable to connect to Google. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -171,7 +161,7 @@ export default function AuthScreen() {
                 borderWidth: 1,
                 borderColor: colors.border,
                 color: colors.text,
-                fontSize: 15,
+                fontSize: 16,
               }}
               placeholder="Name (optional)"
               placeholderTextColor={colors.textFaint}
@@ -188,8 +178,10 @@ export default function AuthScreen() {
               borderWidth: 1,
               borderColor: colors.border,
               color: colors.text,
-              fontSize: 15,
+              fontSize: 16,
             }}
+            accessibilityLabel="Email address"
+            autoComplete="email"
             placeholder="Email"
             placeholderTextColor={colors.textFaint}
             value={email}
@@ -206,8 +198,12 @@ export default function AuthScreen() {
               borderWidth: 1,
               borderColor: colors.border,
               color: colors.text,
-              fontSize: 15,
+              fontSize: 16,
             }}
+            accessibilityLabel="Password"
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            onSubmitEditing={() => { if (!loading) void handleSubmit(); }}
+            returnKeyType="go"
             placeholder="Password"
             placeholderTextColor={colors.textFaint}
             value={password}
@@ -242,7 +238,7 @@ export default function AuthScreen() {
               style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
             >
               <Ionicons name="logo-google" size={18} color={colors.text} />
-              <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600', marginLeft: 8 }}>
+              <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
                 Continue with Google
               </Text>
             </Pressable>
@@ -255,13 +251,14 @@ export default function AuthScreen() {
             style={{ backgroundColor: 'rgba(126,226,190,0.10)', borderWidth: 1, borderColor: colors.primary }}
           >
             <Ionicons name="flask-outline" size={18} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontSize: 15, fontWeight: '700', marginLeft: 8 }}>
-              Try with Test Account
+            <Text style={{ color: colors.primary, fontSize: 16, fontWeight: '700', marginLeft: 8 }}>
+              Use Test Account
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => {
+              if (loading) return;
               setError(null);
               setMode(mode === 'signin' ? 'signup' : 'signin');
             }}

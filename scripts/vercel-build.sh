@@ -13,4 +13,6 @@ if [ -d dist/assets/node_modules ]; then
   done
 fi
 
+node scripts/web-fonts.mjs
+
 echo "Build complete."
